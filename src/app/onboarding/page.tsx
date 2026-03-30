@@ -1,0 +1,782 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  Banknote,
+  BriefcaseBusiness,
+  ChevronLeft,
+  ChevronRight,
+  CreditCard,
+  GraduationCap,
+  Heart,
+  Home,
+  Loader2,
+  Plus,
+  ShoppingBag,
+  Sparkles,
+  Target,
+  Train,
+  Trash2,
+  TrendingUp,
+  Tv,
+  Utensils,
+  Wallet,
+  Zap,
+} from "lucide-react";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
+
+import { isAuthenticated } from "@/lib/auth";
+import { createGoal, updateCurrentUser } from "@/lib/api";
+
+gsap.registerPlugin(useGSAP);
+
+/* ---------- types ---------- */
+
+type IncomeData = {
+  salary: string;
+  freelance: string;
+  rental: string;
+  other: string;
+};
+
+type ExpenseData = {
+  rent_housing: string;
+  food_dining: string;
+  transport: string;
+  utilities: string;
+  entertainment: string;
+  shopping: string;
+  healthcare: string;
+  education: string;
+  other: string;
+};
+
+type LoanEntry = {
+  id: string;
+  type: string;
+  name: string;
+  balance: string;
+  emi: string;
+  rate: string;
+};
+
+type GoalEntry = {
+  id: string;
+  name: string;
+  priority: string;
+  target: string;
+  type: string;
+};
+
+const LOAN_TYPES = [
+  "Home Loan",
+  "Car Loan",
+  "Personal Loan",
+  "Education Loan",
+  "Credit Card",
+  "Gold Loan",
+  "Two-Wheeler Loan",
+  "Other",
+];
+
+const GOAL_TYPES = [
+  { value: "emergency_fund", label: "Emergency Fund" },
+  { value: "vehicle", label: "Vehicle" },
+  { value: "home", label: "Home" },
+  { value: "education", label: "Education" },
+  { value: "retirement", label: "Retirement" },
+  { value: "vacation", label: "Vacation" },
+  { value: "wedding", label: "Wedding" },
+  { value: "investment", label: "Investment" },
+  { value: "debt_payoff", label: "Debt Payoff" },
+  { value: "custom", label: "Custom" },
+];
+
+const STEPS = [
+  { label: "INCOME", number: 1 },
+  { label: "EXPENSES", number: 2 },
+  { label: "LOANS", number: 3 },
+  { label: "GOALS", number: 4 },
+];
+
+/* ---------- helpers ---------- */
+
+function uid() {
+  return Math.random().toString(36).slice(2, 10);
+}
+
+function parseNum(v: string): number {
+  const n = Number(v);
+  return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
+/* ---------- components ---------- */
+
+function StepIndicator({ current }: { current: number }) {
+  return (
+    <div className="flex items-center justify-center gap-0">
+      {STEPS.map((step, i) => (
+        <div key={step.number} className="flex items-center">
+          {/* Circle */}
+          <div className="flex flex-col items-center">
+            <div
+              className={`
+                flex size-10 items-center justify-center rounded-full text-sm font-semibold transition-all duration-500
+                ${
+                  i < current
+                    ? "bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.4)]"
+                    : i === current
+                      ? "bg-emerald-500 text-white shadow-[0_0_24px_rgba(16,185,129,0.5)] ring-2 ring-emerald-400/30 ring-offset-2 ring-offset-[#0c1220]"
+                      : "border border-white/10 bg-white/5 text-white/30"
+                }
+              `}
+            >
+              {step.number}
+            </div>
+            <span
+              className={`mt-2 text-[10px] font-semibold tracking-[0.15em] transition-colors duration-500 ${
+                i <= current ? "text-emerald-400" : "text-white/20"
+              }`}
+            >
+              {step.label}
+            </span>
+          </div>
+          {/* Connector line */}
+          {i < STEPS.length - 1 && (
+            <div className="mx-1 mb-5 h-[2px] w-16 sm:w-24 md:w-32">
+              <div
+                className="h-full rounded-full transition-all duration-700"
+                style={{
+                  background:
+                    i < current
+                      ? "linear-gradient(90deg, #10b981, #10b981)"
+                      : "linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.06))",
+                }}
+              />
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function FieldGroup({
+  icon: Icon,
+  label,
+  value,
+  onChange,
+  placeholder,
+  prefix,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+  prefix?: string;
+}) {
+  return (
+    <div data-animate="field" className="space-y-1.5">
+      <label className="text-xs font-medium tracking-wide text-white/50">{label}</label>
+      <div className="group relative flex items-center overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.03] transition-all focus-within:border-emerald-500/40 focus-within:bg-white/[0.05] focus-within:shadow-[0_0_20px_rgba(16,185,129,0.08)]">
+        <div className="flex size-10 shrink-0 items-center justify-center text-white/25 group-focus-within:text-emerald-400/60">
+          {prefix ? <span className="text-base">{prefix}</span> : <Icon className="size-4" />}
+        </div>
+        <input
+          type="text"
+          inputMode="decimal"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className="h-12 w-full bg-transparent pr-4 text-sm text-white outline-none placeholder:text-white/20"
+        />
+      </div>
+    </div>
+  );
+}
+
+/* ---------- step panels ---------- */
+
+function StepIncome({
+  data,
+  onChange,
+}: {
+  data: IncomeData;
+  onChange: (d: IncomeData) => void;
+}) {
+  const total =
+    parseNum(data.salary) +
+    parseNum(data.freelance) +
+    parseNum(data.rental) +
+    parseNum(data.other);
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold text-white">Monthly Income</h2>
+        <p className="mt-1 text-sm text-white/40">
+          Let&apos;s start with what you bring home every month.
+        </p>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <FieldGroup
+          icon={Wallet}
+          label="Salary (Net)"
+          value={data.salary}
+          onChange={(v) => onChange({ ...data, salary: v })}
+          placeholder="e.g. 80000"
+          prefix="₹"
+        />
+        <FieldGroup
+          icon={BriefcaseBusiness}
+          label="Freelance / Side Hustle"
+          value={data.freelance}
+          onChange={(v) => onChange({ ...data, freelance: v })}
+          placeholder="e.g. 15000"
+        />
+        <FieldGroup
+          icon={Home}
+          label="Rental Income"
+          value={data.rental}
+          onChange={(v) => onChange({ ...data, rental: v })}
+          placeholder="e.g. 10000"
+        />
+        <FieldGroup
+          icon={Plus}
+          label="Other Income"
+          value={data.other}
+          onChange={(v) => onChange({ ...data, other: v })}
+          placeholder="Dividends, interest, etc."
+        />
+      </div>
+
+      <div className="flex items-center justify-between rounded-xl border border-emerald-500/20 bg-emerald-500/[0.06] px-5 py-3">
+        <span className="text-sm font-medium text-emerald-400">Total Monthly Income</span>
+        <span className="text-xl font-bold text-emerald-300">
+          ₹{total.toLocaleString("en-IN")}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function StepExpenses({
+  data,
+  onChange,
+  totalIncome,
+}: {
+  data: ExpenseData;
+  onChange: (d: ExpenseData) => void;
+  totalIncome: number;
+}) {
+  const fields: {
+    key: keyof ExpenseData;
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+  }[] = [
+    { key: "rent_housing", label: "Rent / Housing", icon: Home },
+    { key: "food_dining", label: "Food & Dining", icon: Utensils },
+    { key: "transport", label: "Transport", icon: Train },
+    { key: "utilities", label: "Utilities", icon: Zap },
+    { key: "entertainment", label: "Entertainment", icon: Tv },
+    { key: "shopping", label: "Shopping", icon: ShoppingBag },
+    { key: "healthcare", label: "Healthcare", icon: Heart },
+    { key: "education", label: "Education", icon: GraduationCap },
+    { key: "other", label: "Other", icon: Plus },
+  ];
+
+  const totalExpenses = Object.values(data).reduce((s, v) => s + parseNum(v), 0);
+  const surplus = totalIncome - totalExpenses;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-start justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-white">Monthly Expenses</h2>
+          <p className="mt-1 text-sm text-white/40">
+            Track where your money goes to optimize savings.
+          </p>
+        </div>
+        <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-2 text-right">
+          <span className="text-[10px] font-medium tracking-wider text-white/40">Surplus</span>
+          <p className={`text-lg font-bold ${surplus >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+            ₹{surplus.toLocaleString("en-IN")}
+          </p>
+        </div>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {fields.map((f) => (
+          <FieldGroup
+            key={f.key}
+            icon={f.icon}
+            label={f.label}
+            value={data[f.key]}
+            onChange={(v) => onChange({ ...data, [f.key]: v })}
+            placeholder="0"
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function StepLoans({
+  loans,
+  onChange,
+}: {
+  loans: LoanEntry[];
+  onChange: (l: LoanEntry[]) => void;
+}) {
+  function addLoan() {
+    onChange([
+      ...loans,
+      { id: uid(), type: "", name: "", balance: "", emi: "", rate: "" },
+    ]);
+  }
+
+  function updateLoan(id: string, patch: Partial<LoanEntry>) {
+    onChange(loans.map((l) => (l.id === id ? { ...l, ...patch } : l)));
+  }
+
+  function removeLoan(id: string) {
+    onChange(loans.filter((l) => l.id !== id));
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold text-white">Active Loans & Debt</h2>
+        <p className="mt-1 text-sm text-white/40">
+          List your outstanding liabilities for an AI-optimized payoff strategy.
+        </p>
+      </div>
+
+      {loans.map((loan) => (
+        <div
+          key={loan.id}
+          className="relative space-y-3 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5"
+        >
+          <button
+            type="button"
+            onClick={() => removeLoan(loan.id)}
+            className="absolute right-3 top-3 rounded-lg p-1.5 text-white/20 transition-colors hover:bg-white/5 hover:text-red-400"
+          >
+            <Trash2 className="size-4" />
+          </button>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium tracking-wide text-white/50">Loan Type</label>
+              <select
+                value={loan.type}
+                onChange={(e) => updateLoan(loan.id, { type: e.target.value })}
+                className="h-12 w-full rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 text-sm text-white outline-none focus:border-emerald-500/40"
+              >
+                <option value="" className="bg-[#0c1220]">
+                  Select an option
+                </option>
+                {LOAN_TYPES.map((t) => (
+                  <option key={t} value={t} className="bg-[#0c1220]">
+                    {t}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <FieldGroup
+              icon={CreditCard}
+              label="Loan Name"
+              value={loan.name}
+              onChange={(v) => updateLoan(loan.id, { name: v })}
+              placeholder="e.g., SBI Home Loan"
+            />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <FieldGroup
+              icon={Banknote}
+              label="Outstanding Balance"
+              value={loan.balance}
+              onChange={(v) => updateLoan(loan.id, { balance: v })}
+              placeholder="Outstanding Balance"
+              prefix="₹"
+            />
+            <FieldGroup
+              icon={Banknote}
+              label="Monthly EMI"
+              value={loan.emi}
+              onChange={(v) => updateLoan(loan.id, { emi: v })}
+              placeholder="Monthly EMI"
+              prefix="₹"
+            />
+            <FieldGroup
+              icon={TrendingUp}
+              label="Interest Rate %"
+              value={loan.rate}
+              onChange={(v) => updateLoan(loan.id, { rate: v })}
+              placeholder="e.g. 8.5"
+            />
+          </div>
+        </div>
+      ))}
+
+      <button
+        type="button"
+        onClick={addLoan}
+        className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-white/10 bg-white/[0.02] py-4 text-sm text-white/30 transition-colors hover:border-emerald-500/30 hover:text-emerald-400"
+      >
+        <Plus className="size-4" />
+        Add Another Loan
+      </button>
+    </div>
+  );
+}
+
+function StepGoals({
+  goals,
+  onChange,
+}: {
+  goals: GoalEntry[];
+  onChange: (g: GoalEntry[]) => void;
+}) {
+  function addGoal() {
+    onChange([
+      ...goals,
+      { id: uid(), name: "", priority: "medium", target: "", type: "custom" },
+    ]);
+  }
+
+  function updateGoal(id: string, patch: Partial<GoalEntry>) {
+    onChange(goals.map((g) => (g.id === id ? { ...g, ...patch } : g)));
+  }
+
+  function removeGoal(id: string) {
+    onChange(goals.filter((g) => g.id !== id));
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold text-white">Financial Goals</h2>
+        <p className="mt-1 text-sm text-white/40">
+          What are you saving for? Let AI map your timeline.
+        </p>
+      </div>
+
+      {goals.map((goal) => (
+        <div
+          key={goal.id}
+          className="relative space-y-3 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5"
+        >
+          <button
+            type="button"
+            onClick={() => removeGoal(goal.id)}
+            className="absolute right-3 top-3 rounded-lg p-1.5 text-white/20 transition-colors hover:bg-white/5 hover:text-red-400"
+          >
+            <Trash2 className="size-4" />
+          </button>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <FieldGroup
+              icon={Target}
+              label="Goal Name"
+              value={goal.name}
+              onChange={(v) => updateGoal(goal.id, { name: v })}
+              placeholder="e.g. House Downpayment"
+            />
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium tracking-wide text-white/50">Priority</label>
+              <select
+                value={goal.priority}
+                onChange={(e) => updateGoal(goal.id, { priority: e.target.value })}
+                className="h-12 w-full rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 text-sm text-white outline-none focus:border-emerald-500/40"
+              >
+                <option value="high" className="bg-[#0c1220]">High Priority</option>
+                <option value="medium" className="bg-[#0c1220]">Medium Priority</option>
+                <option value="low" className="bg-[#0c1220]">Low Priority</option>
+              </select>
+            </div>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <FieldGroup
+              icon={Banknote}
+              label="Target Amount"
+              value={goal.target}
+              onChange={(v) => updateGoal(goal.id, { target: v })}
+              placeholder="500000"
+              prefix="₹"
+            />
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium tracking-wide text-white/50">Goal Type</label>
+              <select
+                value={goal.type}
+                onChange={(e) => updateGoal(goal.id, { type: e.target.value })}
+                className="h-12 w-full rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 text-sm text-white outline-none focus:border-emerald-500/40"
+              >
+                {GOAL_TYPES.map((t) => (
+                  <option key={t.value} value={t.value} className="bg-[#0c1220]">
+                    {t.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+      ))}
+
+      <button
+        type="button"
+        onClick={addGoal}
+        className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-white/10 bg-white/[0.02] py-4 text-sm text-white/30 transition-colors hover:border-emerald-500/30 hover:text-emerald-400"
+      >
+        <Plus className="size-4" />
+        Add Another Goal
+      </button>
+    </div>
+  );
+}
+
+/* ---------- main page ---------- */
+
+export default function OnboardingPage() {
+  const router = useRouter();
+  const [step, setStep] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const cardRef = useRef<HTMLDivElement>(null);
+  const pageRef = useRef<HTMLDivElement>(null);
+
+  // Page entrance animation
+  useGSAP(
+    () => {
+      if (!pageRef.current) return;
+
+      const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+
+      const title = pageRef.current.querySelector("[data-animate='title']");
+      const indicator = pageRef.current.querySelector("[data-animate='indicator']");
+      const card = pageRef.current.querySelector("[data-animate='card']");
+      const footer = pageRef.current.querySelector("[data-animate='footer']");
+
+      if (title) tl.fromTo(title, { autoAlpha: 0, y: -20 }, { autoAlpha: 1, y: 0, duration: 0.6 });
+      if (indicator) tl.fromTo(indicator, { autoAlpha: 0, y: -10, scale: 0.95 }, { autoAlpha: 1, y: 0, scale: 1, duration: 0.5 }, "-=0.3");
+      if (card) tl.fromTo(card, { autoAlpha: 0, y: 40, scale: 0.97 }, { autoAlpha: 1, y: 0, scale: 1, duration: 0.7 }, "-=0.3");
+      if (footer) tl.fromTo(footer, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.4 }, "-=0.2");
+    },
+    { scope: pageRef },
+  );
+
+  // Step transition animation
+  useGSAP(
+    () => {
+      if (!cardRef.current) return;
+
+      const fields = cardRef.current.querySelectorAll("[data-animate='field']");
+      const nav = cardRef.current.querySelector("[data-animate='nav']");
+
+      gsap.fromTo(
+        cardRef.current,
+        { autoAlpha: 0.6, x: 40 },
+        { autoAlpha: 1, x: 0, duration: 0.45, ease: "power3.out" },
+      );
+
+      if (fields.length > 0) {
+        gsap.fromTo(
+          Array.from(fields),
+          { autoAlpha: 0, y: 14 },
+          { autoAlpha: 1, y: 0, duration: 0.35, stagger: 0.04, ease: "power2.out", delay: 0.1 },
+        );
+      }
+
+      if (nav) {
+        gsap.fromTo(nav, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.3, delay: 0.25 });
+      }
+    },
+    { scope: cardRef, dependencies: [step], revertOnUpdate: true },
+  );
+
+  const [income, setIncome] = useState<IncomeData>({
+    salary: "",
+    freelance: "",
+    rental: "",
+    other: "",
+  });
+
+  const [expenses, setExpenses] = useState<ExpenseData>({
+    rent_housing: "",
+    food_dining: "",
+    transport: "",
+    utilities: "",
+    entertainment: "",
+    shopping: "",
+    healthcare: "",
+    education: "",
+    other: "",
+  });
+
+  const [loans, setLoans] = useState<LoanEntry[]>([
+    { id: uid(), type: "", name: "", balance: "", emi: "", rate: "" },
+  ]);
+
+  const [goals, setGoals] = useState<GoalEntry[]>([
+    { id: uid(), name: "", priority: "high", target: "", type: "emergency_fund" },
+  ]);
+
+  useEffect(() => {
+    if (!isAuthenticated()) {
+      router.replace("/login");
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const totalIncome =
+    parseNum(income.salary) +
+    parseNum(income.freelance) +
+    parseNum(income.rental) +
+    parseNum(income.other);
+
+  function next() {
+    if (step < 3) setStep(step + 1);
+  }
+
+  function back() {
+    if (step > 0) setStep(step - 1);
+  }
+
+  async function handleSubmit() {
+    setSubmitting(true);
+    setError("");
+
+    try {
+      // 1. Save profile with total income
+      await updateCurrentUser({
+        monthly_income: totalIncome || null,
+        onboarding_done: true,
+      });
+
+      // 2. Create goals from Step 4
+      for (const goal of goals) {
+        const targetAmount = parseNum(goal.target);
+        if (goal.name.trim() && targetAmount > 0) {
+          const timelineMonths =
+            goal.priority === "high" ? 12 : goal.priority === "medium" ? 24 : 36;
+          try {
+            await createGoal({
+              goal_type: goal.type,
+              title: goal.name.trim(),
+              target_amount: targetAmount,
+              timeline_months: timelineMonths,
+              current_amount: 0,
+            });
+          } catch {
+            // skip individual goal errors
+          }
+        }
+      }
+
+      router.replace("/dashboard");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong.");
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div ref={pageRef} className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[#060a13]">
+      {/* Background glow effects */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute left-1/4 top-0 h-[600px] w-[600px] rounded-full bg-emerald-500/[0.03] blur-[120px]" />
+        <div className="absolute bottom-0 right-1/4 h-[500px] w-[500px] rounded-full bg-emerald-600/[0.02] blur-[100px]" />
+        {/* Noise grain overlay */}
+        <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")", backgroundRepeat: "repeat" }} />
+      </div>
+
+      <div className="relative z-10 w-full max-w-3xl px-4 py-12">
+        {/* Title */}
+        <h1 data-animate="title" className="mb-10 text-center text-3xl font-bold tracking-tight text-white md:text-4xl">
+          Your Financial Foundation
+        </h1>
+
+        {/* Step indicator */}
+        <div data-animate="indicator" className="mb-10">
+          <StepIndicator current={step} />
+        </div>
+
+        {/* Card */}
+        <div
+          ref={cardRef}
+          data-animate="card"
+          className="rounded-3xl border border-white/[0.06] bg-white/[0.02] p-6 shadow-[0_8px_60px_rgba(0,0,0,0.5)] backdrop-blur-xl sm:p-8"
+        >
+          {step === 0 && <StepIncome data={income} onChange={setIncome} />}
+          {step === 1 && (
+            <StepExpenses data={expenses} onChange={setExpenses} totalIncome={totalIncome} />
+          )}
+          {step === 2 && <StepLoans loans={loans} onChange={setLoans} />}
+          {step === 3 && <StepGoals goals={goals} onChange={setGoals} />}
+
+          {error && (
+            <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/[0.06] px-4 py-2 text-sm text-red-300">
+              {error}
+            </div>
+          )}
+
+          {/* Navigation */}
+          <div data-animate="nav" className="mt-8 flex items-center justify-between">
+            <button
+              type="button"
+              onClick={back}
+              disabled={step === 0}
+              className={`flex items-center gap-1.5 text-sm font-medium transition-colors ${
+                step === 0
+                  ? "cursor-not-allowed text-white/10"
+                  : "text-white/40 hover:text-white"
+              }`}
+            >
+              <ChevronLeft className="size-4" />
+              Back
+            </button>
+
+            {step < 3 ? (
+              <button
+                type="button"
+                onClick={next}
+                className="flex items-center gap-2 rounded-xl bg-emerald-500 px-7 py-3 text-sm font-semibold text-white shadow-[0_0_24px_rgba(16,185,129,0.3)] transition-all hover:bg-emerald-400 hover:shadow-[0_0_32px_rgba(16,185,129,0.4)] active:scale-[0.97]"
+              >
+                Continue
+                <ChevronRight className="size-4" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={submitting}
+                className="flex items-center gap-2 rounded-xl bg-emerald-500 px-7 py-3 text-sm font-semibold text-white shadow-[0_0_24px_rgba(16,185,129,0.3)] transition-all hover:bg-emerald-400 hover:shadow-[0_0_32px_rgba(16,185,129,0.4)] active:scale-[0.97] disabled:opacity-60"
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin" />
+                    Generating AI Plan...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="size-4" />
+                    Generate AI Plan
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+        </div>
+
+        <p data-animate="footer" className="mt-6 text-center text-xs text-white/15">
+          Your data is encrypted and never shared. Powered by 6 autonomous AI agents.
+        </p>
+      </div>
+
+    </div>
+  );
+}
