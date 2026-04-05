@@ -9,9 +9,14 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends build-essential libpq-dev tesseract-ocr tesseract-ocr-eng \
     && rm -rf /var/lib/apt/lists/*
 
-COPY finna/backend /app
+COPY pyproject.toml ./
+COPY app/ ./app/
+COPY alembic/ ./alembic/
+COPY alembic.ini ./
 
-RUN pip install --no-cache-dir --upgrade pip uv \
-    && uv pip install --system ".[dev]"
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir .
 
-WORKDIR /workspace/finna/backend
+EXPOSE 8000
+
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
