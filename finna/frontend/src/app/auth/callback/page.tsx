@@ -67,22 +67,26 @@ export default function AuthCallbackPage() {
     }
 
     async function syncAndRedirect(accessToken: string, refreshToken: string) {
-      // Call our backend to sync the user profile
-      // The backend's get_current_user will verify the token with Supabase
-      // and ensure_profile will create/update the local user record
-      const profileResponse = await fetch(`${API_BASE_URL}/v1/auth/me`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-
       let user = { id: "", email: "", name: null as string | null };
 
-      if (profileResponse.ok) {
-        const data = await profileResponse.json();
-        user = { id: data.user_id || data.id || "", email: data.email || "", name: data.name || null };
-      } else {
-        // Fallback: decode the JWT to get basic user info
+      // Try to sync with backend, but don't block login if backend is unreachable
+      try {
+        const profileResponse = await fetch(`${API_BASE_URL}/v1/auth/me`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+
+        if (profileResponse.ok) {
+          const data = await profileResponse.json();
+          user = { id: data.user_id || data.id || "", email: data.email || "", name: data.name || null };
+        }
+      } catch {
+        // Backend unreachable — fall through to JWT decode
+      }
+
+      // Fallback: decode the JWT to get basic user info
+      if (!user.id) {
         try {
           const payload = JSON.parse(atob(accessToken.split(".")[1]));
           user = {
