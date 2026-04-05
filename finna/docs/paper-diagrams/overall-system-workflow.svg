@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1220" viewBox="0 0 1600 1220" role="img" aria-labelledby="title desc">
+  <title id="title">Overall System Workflow of the Proposed Financial Optimization System</title>
+  <desc id="desc">A clean flowchart showing user profile input and bank statement upload flowing into parsing, classification, financial metrics, downstream analysis modules, shared context, orchestrator, dashboard, and AI financial coach.</desc>
+  <defs>
+    <style>
+      .bg { fill: #f7f9fc; }
+      .frame { fill: #ffffff; stroke: #d7deea; stroke-width: 2; rx: 26; ry: 26; }
+      .group { fill: #eef4ff; stroke: #d2dff8; stroke-width: 2; rx: 30; ry: 30; }
+      .node { fill: #ffffff; stroke: #3f5f94; stroke-width: 2.5; rx: 20; ry: 20; }
+      .node-alt { fill: #f6fbff; stroke: #4e7b66; stroke-width: 2.5; rx: 20; ry: 20; }
+      .node-accent { fill: #f4f7ff; stroke: #264a87; stroke-width: 3; rx: 20; ry: 20; }
+      .title { font: 700 34px Arial, Helvetica, sans-serif; fill: #163154; }
+      .subtitle { font: 600 18px Arial, Helvetica, sans-serif; fill: #4b5f7d; }
+      .label { font: 700 20px Arial, Helvetica, sans-serif; fill: #183252; }
+      .text { font: 500 16px Arial, Helvetica, sans-serif; fill: #4d607b; }
+      .small { font: 600 15px Arial, Helvetica, sans-serif; fill: #335d96; }
+      .line { stroke: #31598f; stroke-width: 3; fill: none; }
+      .line-soft { stroke: #4e7b66; stroke-width: 3; fill: none; }
+    </style>
+    <marker id="arrowBlue" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M0,0 L12,6 L0,12 z" fill="#31598f"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M0,0 L12,6 L0,12 z" fill="#4e7b66"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1600" height="1220"/>
+  <rect class="frame" x="28" y="28" width="1544" height="1164"/>
+
+  <text class="title" x="800" y="74" text-anchor="middle">Overall System Workflow of the Proposed Financial Optimization System</text>
+  <text class="subtitle" x="800" y="106" text-anchor="middle">Real financial data ingestion, deterministic analysis, simulation, and multi-agent recommendation synthesis</text>
+
+  <rect class="group" x="110" y="140" width="1380" height="145"/>
+  <text class="small" x="140" y="175">Input Layer</text>
+
+  <rect class="node" x="170" y="190" width="520" height="72"/>
+  <text class="label" x="430" y="220" text-anchor="middle">User Profile Input</text>
+  <text class="text" x="430" y="245" text-anchor="middle">Name, monthly income, tax regime, goals</text>
+
+  <rect class="node" x="910" y="190" width="520" height="72"/>
+  <text class="label" x="1170" y="220" text-anchor="middle">Bank Statement Upload</text>
+  <text class="text" x="1170" y="245" text-anchor="middle">CSV, XLSX, PDF, encrypted PDF support</text>
+
+  <path class="line" d="M430 262 L430 320 L740 320 L740 350" marker-end="url(#arrowBlue)"/>
+  <path class="line" d="M1170 262 L1170 320 L860 320 L860 350" marker-end="url(#arrowBlue)"/>
+
+  <rect class="node-accent" x="555" y="350" width="490" height="96"/>
+  <text class="label" x="800" y="384" text-anchor="middle">Statement Parsing and Normalization</text>
+  <text class="text" x="800" y="412" text-anchor="middle">Header mapping, date parsing, amount parsing, OCR fallback</text>
+  <text class="text" x="800" y="436" text-anchor="middle">masking, transaction-type inference, deduplication</text>
+
+  <path class="line" d="M800 446 L800 510" marker-end="url(#arrowBlue)"/>
+
+  <rect class="node" x="590" y="510" width="420" height="86"/>
+  <text class="label" x="800" y="542" text-anchor="middle">Transaction Classification</text>
+  <text class="text" x="800" y="568" text-anchor="middle">Rule-based merchant mapping + fuzzy string matching</text>
+
+  <path class="line" d="M800 596 L800 660" marker-end="url(#arrowBlue)"/>
+
+  <rect class="node-accent" x="500" y="660" width="600" height="96"/>
+  <text class="label" x="800" y="694" text-anchor="middle">Financial Metric Engine</text>
+  <text class="text" x="800" y="722" text-anchor="middle">Income, expenses, savings rate, debt ratio, investment rate</text>
+  <text class="text" x="800" y="746" text-anchor="middle">emergency fund, cashflow trends, top merchants, spending mix</text>
+
+  <rect class="group" x="70" y="790" width="1460" height="170"/>
+  <text class="small" x="100" y="825">Downstream Analysis Modules</text>
+
+  <rect class="node-alt" x="105" y="845" width="255" height="82"/>
+  <text class="label" x="232" y="877" text-anchor="middle">Financial Health Score</text>
+  <text class="text" x="232" y="902" text-anchor="middle">Weighted rule-based 0-100 score</text>
+
+  <rect class="node-alt" x="390" y="845" width="255" height="82"/>
+  <text class="label" x="517" y="877" text-anchor="middle">Goal Feasibility Analysis</text>
+  <text class="text" x="517" y="902" text-anchor="middle">Monte Carlo success probability</text>
+
+  <rect class="node-alt" x="675" y="845" width="255" height="82"/>
+  <text class="label" x="802" y="877" text-anchor="middle">Risk Detection</text>
+  <text class="text" x="802" y="902" text-anchor="middle">Threshold-based alerts and warnings</text>
+
+  <rect class="node-alt" x="960" y="845" width="255" height="82"/>
+  <text class="label" x="1087" y="877" text-anchor="middle">Investment Guidance</text>
+  <text class="text" x="1087" y="902" text-anchor="middle">Stage-based allocation planning</text>
+
+  <rect class="node-alt" x="1245" y="845" width="255" height="82"/>
+  <text class="label" x="1372" y="877" text-anchor="middle">Tax Guidance</text>
+  <text class="text" x="1372" y="902" text-anchor="middle">India-specific tax-aware suggestions</text>
+
+  <path class="line-soft" d="M800 756 L800 805 L232 805 L232 845" marker-end="url(#arrowGreen)"/>
+  <path class="line-soft" d="M800 756 L800 820 L517 820 L517 845" marker-end="url(#arrowGreen)"/>
+  <path class="line-soft" d="M800 756 L800 845" marker-end="url(#arrowGreen)"/>
+  <path class="line-soft" d="M800 756 L800 820 L1087 820 L1087 845" marker-end="url(#arrowGreen)"/>
+  <path class="line-soft" d="M800 756 L800 805 L1372 805 L1372 845" marker-end="url(#arrowGreen)"/>
+
+  <path class="line" d="M232 927 L232 995 L800 995 L800 1028" marker-end="url(#arrowBlue)"/>
+  <path class="line" d="M517 927 L517 980 L800 980 L800 1028" marker-end="url(#arrowBlue)"/>
+  <path class="line" d="M802 927 L802 1028" marker-end="url(#arrowBlue)"/>
+  <path class="line" d="M1087 927 L1087 980 L800 980 L800 1028" marker-end="url(#arrowBlue)"/>
+  <path class="line" d="M1372 927 L1372 995 L800 995 L800 1028" marker-end="url(#arrowBlue)"/>
+
+  <rect class="node-accent" x="570" y="1028" width="460" height="86"/>
+  <text class="label" x="800" y="1060" text-anchor="middle">Shared Financial Context and Orchestrator</text>
+  <text class="text" x="800" y="1086" text-anchor="middle">Specialist-agent selection, aggregation, and recommendation synthesis</text>
+
+  <path class="line" d="M800 1114 L800 1150 L390 1150 L390 1178" marker-end="url(#arrowBlue)"/>
+  <path class="line" d="M800 1114 L800 1150 L1210 1150 L1210 1178" marker-end="url(#arrowBlue)"/>
+
+  <rect class="node" x="140" y="1178" width="500" height="32" visibility="hidden"/>
+  <rect class="node" x="140" y="1138" width="500" height="68"/>
+  <text class="label" x="390" y="1166" text-anchor="middle">Dashboard Outputs</text>
+  <text class="text" x="390" y="1190" text-anchor="middle">Health score, cashflow, recurring expenses, alerts</text>
+
+  <rect class="node" x="960" y="1138" width="500" height="68"/>
+  <text class="label" x="1210" y="1166" text-anchor="middle">AI Financial Coach</text>
+  <text class="text" x="1210" y="1190" text-anchor="middle">Conversational recommendations and guided planning</text>
+</svg>

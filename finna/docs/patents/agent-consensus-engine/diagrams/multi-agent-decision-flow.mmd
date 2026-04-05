@@ -1,0 +1,24 @@
+flowchart TD
+    A[User financial prompt] --> B[Intent parser]
+    B --> C[Specialist agent selection]
+    C --> D1[Expense agent claim]
+    C --> D2[Debt agent claim]
+    C --> D3[Goal agent claim]
+    C --> D4[Risk agent claim]
+    C --> D5[Investment agent claim]
+    C --> D6[Tax agent claim]
+    D1 --> E[Evidence atoms]
+    D2 --> E
+    D3 --> E
+    D4 --> E
+    D5 --> E
+    D6 --> E
+    E --> F[Consensus engine]
+    F --> G[Execution gate]
+    G --> H[Scored claims]
+    H --> I[Winning recommendation]
+    H --> J[Suppressed alternatives]
+    I --> K[Disclosure policy]
+    J --> K
+    K --> L[Final advice packet]
+    L --> M[Chat and dashboard surfaces]

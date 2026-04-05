@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1040" viewBox="0 0 1600 1040" role="img" aria-labelledby="title desc">
+  <title id="title">Multi-Agent Orchestration in the Proposed Agentic AI Framework</title>
+  <desc id="desc">A clean architecture diagram showing a user query entering the orchestrator agent, routing to six specialist agents, returning findings to synthesis, and producing dashboard and conversational outputs.</desc>
+  <defs>
+    <style>
+      .bg { fill: #f7f9fc; }
+      .frame { fill: #ffffff; stroke: #d7deea; stroke-width: 2; rx: 26; ry: 26; }
+      .group { fill: #eef4ff; stroke: #d2dff8; stroke-width: 2; rx: 30; ry: 30; }
+      .node { fill: #ffffff; stroke: #3f5f94; stroke-width: 2.5; rx: 20; ry: 20; }
+      .node-alt { fill: #f6fbff; stroke: #4e7b66; stroke-width: 2.5; rx: 20; ry: 20; }
+      .node-accent { fill: #f4f7ff; stroke: #264a87; stroke-width: 3; rx: 20; ry: 20; }
+      .title { font: 700 34px Arial, Helvetica, sans-serif; fill: #163154; }
+      .subtitle { font: 600 18px Arial, Helvetica, sans-serif; fill: #4b5f7d; }
+      .label { font: 700 20px Arial, Helvetica, sans-serif; fill: #183252; }
+      .text { font: 500 16px Arial, Helvetica, sans-serif; fill: #4d607b; }
+      .small { font: 600 15px Arial, Helvetica, sans-serif; fill: #335d96; }
+      .line { stroke: #31598f; stroke-width: 3; fill: none; }
+      .line-soft { stroke: #4e7b66; stroke-width: 3; fill: none; }
+    </style>
+    <marker id="arrowBlue" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M0,0 L12,6 L0,12 z" fill="#31598f"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M0,0 L12,6 L0,12 z" fill="#4e7b66"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1600" height="1040"/>
+  <rect class="frame" x="28" y="28" width="1544" height="984"/>
+
+  <text class="title" x="800" y="74" text-anchor="middle">Multi-Agent Orchestration in the Proposed Agentic AI Framework</text>
+  <text class="subtitle" x="800" y="106" text-anchor="middle">Specialist financial agents coordinated by a central orchestrator</text>
+
+  <rect class="node" x="530" y="150" width="540" height="80"/>
+  <text class="label" x="800" y="182" text-anchor="middle">User Query or Shared Financial Context</text>
+  <text class="text" x="800" y="208" text-anchor="middle">Spending, goals, debt, risk, investment, tax, or full financial review</text>
+
+  <path class="line" d="M800 230 L800 292" marker-end="url(#arrowBlue)"/>
+
+  <rect class="node-accent" x="575" y="292" width="450" height="86"/>
+  <text class="label" x="800" y="324" text-anchor="middle">Orchestrator Agent</text>
+  <text class="text" x="800" y="350" text-anchor="middle">Selects relevant agents, merges findings, resolves overlaps</text>
+
+  <rect class="group" x="110" y="418" width="1380" height="290"/>
+  <text class="small" x="140" y="452">Specialist Agents</text>
+
+  <rect class="node-alt" x="160" y="485" width="360" height="84"/>
+  <text class="label" x="340" y="517" text-anchor="middle">Expense Agent</text>
+  <text class="text" x="340" y="544" text-anchor="middle">Spending patterns, discretionary leaks, recurring costs</text>
+
+  <rect class="node-alt" x="620" y="485" width="360" height="84"/>
+  <text class="label" x="800" y="517" text-anchor="middle">Debt Agent</text>
+  <text class="text" x="800" y="544" text-anchor="middle">Debt pressure, repayment discipline, debt-to-income review</text>
+
+  <rect class="node-alt" x="1080" y="485" width="360" height="84"/>
+  <text class="label" x="1260" y="517" text-anchor="middle">Goal Agent</text>
+  <text class="text" x="1260" y="544" text-anchor="middle">Goal feasibility, success probability, savings gap analysis</text>
+
+  <rect class="node-alt" x="160" y="600" width="360" height="84"/>
+  <text class="label" x="340" y="632" text-anchor="middle">Risk Agent</text>
+  <text class="text" x="340" y="659" text-anchor="middle">Emergency fund, overspending, unstable financial signals</text>
+
+  <rect class="node-alt" x="620" y="600" width="360" height="84"/>
+  <text class="label" x="800" y="632" text-anchor="middle">Investment Agent</text>
+  <text class="text" x="800" y="659" text-anchor="middle">Stage-based allocation and passive-income planning</text>
+
+  <rect class="node-alt" x="1080" y="600" width="360" height="84"/>
+  <text class="label" x="1260" y="632" text-anchor="middle">Tax Agent</text>
+  <text class="text" x="1260" y="659" text-anchor="middle">Tax regime awareness and India-specific tax suggestions</text>
+
+  <path class="line-soft" d="M800 378 L800 430 L340 430 L340 485" marker-end="url(#arrowGreen)"/>
+  <path class="line-soft" d="M800 378 L800 485" marker-end="url(#arrowGreen)"/>
+  <path class="line-soft" d="M800 378 L800 430 L1260 430 L1260 485" marker-end="url(#arrowGreen)"/>
+  <path class="line-soft" d="M800 378 L800 445 L340 445 L340 600" marker-end="url(#arrowGreen)"/>
+  <path class="line-soft" d="M800 378 L800 445 L800 600" marker-end="url(#arrowGreen)"/>
+  <path class="line-soft" d="M800 378 L800 445 L1260 445 L1260 600" marker-end="url(#arrowGreen)"/>
+
+  <path class="line" d="M340 569 L340 748 L800 748 L800 786" marker-end="url(#arrowBlue)"/>
+  <path class="line" d="M800 569 L800 786" marker-end="url(#arrowBlue)"/>
+  <path class="line" d="M1260 569 L1260 748 L800 748 L800 786" marker-end="url(#arrowBlue)"/>
+  <path class="line" d="M340 684 L340 763 L800 763 L800 786" marker-end="url(#arrowBlue)"/>
+  <path class="line" d="M800 684 L800 786" marker-end="url(#arrowBlue)"/>
+  <path class="line" d="M1260 684 L1260 763 L800 763 L800 786" marker-end="url(#arrowBlue)"/>
+
+  <rect class="node-accent" x="520" y="786" width="560" height="86"/>
+  <text class="label" x="800" y="818" text-anchor="middle">Recommendation Synthesis</text>
+  <text class="text" x="800" y="844" text-anchor="middle">Findings, recommendations, alerts, and LLM-assisted explanation</text>
+
+  <path class="line" d="M800 872 L800 930" marker-end="url(#arrowBlue)"/>
+
+  <rect class="node" x="560" y="930" width="480" height="74"/>
+  <text class="label" x="800" y="960" text-anchor="middle">Final Financial Guidance</text>
+  <text class="text" x="800" y="985" text-anchor="middle">Consolidated recommendation with domain-specific reasoning</text>
+
+  <path class="line" d="M560 967 L330 967" marker-end="url(#arrowBlue)"/>
+  <path class="line" d="M1040 967 L1270 967" marker-end="url(#arrowBlue)"/>
+
+  <rect class="node" x="80" y="930" width="250" height="74"/>
+  <text class="label" x="205" y="960" text-anchor="middle">Dashboard Insights</text>
+  <text class="text" x="205" y="985" text-anchor="middle">Cards, alerts, scores</text>
+
+  <rect class="node" x="1270" y="930" width="250" height="74"/>
+  <text class="label" x="1395" y="960" text-anchor="middle">Conversational Reply</text>
+  <text class="text" x="1395" y="985" text-anchor="middle">Streaming AI copilot output</text>
+</svg>

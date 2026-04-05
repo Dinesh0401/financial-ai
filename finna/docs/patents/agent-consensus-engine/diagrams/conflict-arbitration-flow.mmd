@@ -1,0 +1,15 @@
+flowchart TD
+    A[Receive competing agent claims] --> B[Compute evidence quality]
+    B --> C[Compute data completeness]
+    C --> D[Compute recency score]
+    D --> E[Compute intent-fit score]
+    E --> F[Compute safety-bias score]
+    F --> G[Weighted consensus score]
+    G --> H{Score gap within merge threshold?}
+    H -- No --> I[Select top claim]
+    H -- Yes --> J{Secondary claim more conservative?}
+    J -- No --> I
+    J -- Yes --> K[Merge guardrail into winning action]
+    I --> L[Suppress alternatives]
+    K --> L
+    L --> M[Generate final advice packet]

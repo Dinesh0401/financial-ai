@@ -1,0 +1,14 @@
+flowchart TD
+    A[Winning claim selected] --> B[Inspect user intent]
+    B --> C{Shareable context?}
+    C -- Yes --> D[Set disclosure to category]
+    C -- No --> E{Merchant troubleshooting intent?}
+    E -- Yes --> F[Set disclosure to merchant]
+    E -- No --> G{Planning or goal intent?}
+    G -- Yes --> D
+    G -- No --> H[Set disclosure to summary]
+    D --> I[Filter evidence atoms]
+    F --> I
+    H --> I
+    I --> J[Redact disallowed fields]
+    J --> K[Emit filtered evidence bundle]

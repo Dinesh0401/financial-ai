@@ -1,0 +1,11 @@
+flowchart TD
+    A[User prompt] --> B[Initial agent claims]
+    B --> C{Missing required fields?}
+    C -- Yes --> D[Request missing data]
+    D --> E[Downgrade confidence]
+    E --> F[Suggest additional agents]
+    C -- No --> G{Cross-domain intent under-covered?}
+    G -- Yes --> H[Expand agent scope]
+    H --> I[Re-score claims]
+    G -- No --> I
+    I --> J[Arbitration ready]
