@@ -1,0 +1,38 @@
+.env
+.env.local
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+coverage.xml
+htmlcov/
+dist/
+build/
+.DS_Store
+**/.ocr_vendor_py310/
+dummy_page_*.png
+
+# Logs
+*.log
+*.err.log
+*.out.log
+p.out
+p.err
+hs_err_pid*.log
+
+# Node
+node_modules/
+.next/
+.turbo/
+
+# Temp
+tmp_pdf_review/
+
+# SQLite
+*.db
+*.db-shm
+*.db-wal
