@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Brain, Eye, EyeOff, Network, Shield } from "lucide-react";
 import gsap from "gsap";
@@ -49,6 +49,19 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const supabaseConfigError = getSupabaseAuthConfigError();
+
+  // If OAuth tokens landed on /login instead of /auth/callback, handle them here
+  useEffect(() => {
+    const hash = window.location.hash.substring(1);
+    if (!hash) return;
+    const params = new URLSearchParams(hash);
+    const accessToken = params.get("access_token");
+    if (accessToken) {
+      // Tokens arrived — redirect to the callback page to process them
+      router.replace(`/auth/callback#${hash}`);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
