@@ -1,22 +1,19 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { ComponentType } from "react";
 import { useRouter } from "next/navigation";
-import { Bot, Brain, Cpu, Loader2, Radar, SendHorizontal, Sparkles, Target, TrendingUp, Zap } from "lucide-react";
+import { ArrowUp, Bot, Loader2, Sparkles, User2 } from "lucide-react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 
 import { AppShell } from "@/components/app-shell";
-
-gsap.registerPlugin(useGSAP);
-import { AgentStatusCard } from "@/components/chat/agent-status-card";
 import { ChatMessageBubble, ChatThinkingCard } from "@/components/chat/chat-message-bubble";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { API_BASE_URL } from "@/lib/api";
 import { getToken, isAuthenticated } from "@/lib/auth";
+
+gsap.registerPlugin(useGSAP);
 
 type Message = {
   role: "user" | "assistant" | "system";
@@ -24,39 +21,18 @@ type Message = {
   agents?: string[];
 };
 
-type AgentDescriptor = {
-  name: string;
-  icon: ComponentType<{ className?: string }>;
-  desc: string;
-};
-
-const prompts = [
-  "Can I afford a car worth Rs 5 lakh in 3 years?",
-  "Where is my biggest spending leak this month?",
-  "How much should I move into an emergency fund next?",
-  "Give me a full financial health check.",
-  "What tax-saving opportunities am I missing?",
-  "Should I increase my SIP or pay off debt first?",
-];
-
-const agentInfo: AgentDescriptor[] = [
-  { name: "Expense Agent", icon: Brain, desc: "Classifies spending and detects anomalies" },
-  { name: "Debt Agent", icon: Cpu, desc: "Optimizes loan repayment strategy" },
-  { name: "Goal Agent", icon: Target, desc: "Simulates goal probability" },
-  { name: "Risk Agent", icon: Radar, desc: "Monitors financial risk signals" },
-  { name: "Investment Agent", icon: TrendingUp, desc: "Evaluates portfolio allocation" },
-  { name: "Tax Agent", icon: Zap, desc: "Identifies tax-saving opportunities" },
+const STARTER_PROMPTS = [
+  { label: "Where am I overspending this month?", emoji: "🔍" },
+  { label: "How do I pay off my highest-interest loan faster?", emoji: "💳" },
+  { label: "Am I saving enough for my house goal?", emoji: "🏠" },
+  { label: "What tax savings am I missing?", emoji: "💰" },
+  { label: "Should I invest more or clear debt first?", emoji: "⚖️" },
+  { label: "Give me a 30-second financial health check.", emoji: "❤️" },
 ];
 
 export default function ChatPage() {
   const router = useRouter();
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: "assistant",
-      content:
-        "I'm your Financial Assistant and future money saver, powered by 6 specialist agents. Ask me about spending, goals, investments, tax savings, or financial health, and I will run a real-time multi-agent analysis on your data.",
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
   const [thinkingText, setThinkingText] = useState("");
@@ -67,23 +43,19 @@ export default function ChatPage() {
   useGSAP(
     () => {
       if (!chatPageRef.current) return;
-      const cards = chatPageRef.current.querySelectorAll("[data-animate='card']");
-      if (cards.length === 0) return;
-      gsap.fromTo(
-        Array.from(cards),
-        { autoAlpha: 0, y: 28, scale: 0.98 },
-        { autoAlpha: 1, y: 0, scale: 1, duration: 0.6, stagger: 0.12, ease: "power3.out" },
-      );
+      const welcome = chatPageRef.current.querySelector("[data-animate='welcome']");
+      if (welcome) {
+        gsap.fromTo(welcome, { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, duration: 0.6, ease: "power3.out" });
+      }
     },
-    { scope: chatPageRef },
+    { scope: chatPageRef, dependencies: [messages.length === 0] },
   );
 
   useEffect(() => {
     if (!isAuthenticated()) {
       router.push("/login");
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -143,9 +115,7 @@ export default function ChatPage() {
           try {
             const data = JSON.parse(line.slice(6));
 
-            if (data.thought) {
-              setThinkingText(data.thought);
-            }
+            if (data.thought) setThinkingText(data.thought);
 
             if (data.agent && data.tool && !data.content) {
               setActiveAgents((prev) => (prev.includes(data.agent) ? prev : [...prev, data.agent]));
@@ -168,14 +138,12 @@ export default function ChatPage() {
               setMessages((prev) => {
                 const updated = [...prev];
                 const last = updated[updated.length - 1];
-                if (last?.role === "assistant") {
-                  last.agents = data.tools_used;
-                }
+                if (last?.role === "assistant") last.agents = data.tools_used;
                 return [...updated];
               });
             }
           } catch {
-            // Ignore malformed SSE chunks.
+            // Ignore malformed SSE chunks
           }
         }
       }
@@ -186,7 +154,7 @@ export default function ChatPage() {
           ...prev,
           {
             role: "assistant",
-            content: `I ran multi-agent analysis on your query but the AI service is temporarily at capacity. Here's what I can tell you based on rule-based analysis:\n\nThe specialist agents processed your financial data. Please try again in a moment for a detailed AI-generated response.\n\nTechnical note: ${errorMsg}`,
+            content: `The AI service is temporarily at capacity. Please try again in a moment.\n\nTechnical note: ${errorMsg}`,
           },
         ]);
       }
@@ -204,40 +172,51 @@ export default function ChatPage() {
     }
   }
 
+  const isEmpty = messages.length === 0;
+
   return (
     <AppShell>
-      <div ref={chatPageRef} className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-        <Card data-animate="card" className="overflow-hidden border-border/60 bg-card/80 shadow-[0_24px_60px_-40px_rgba(0,0,0,0.75)] backdrop-blur-xl">
-          <CardHeader className="border-b border-border/50 bg-gradient-to-r from-primary/10 via-transparent to-transparent pb-5">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Bot className="size-5 text-primary" />
-                  <p className="text-xs uppercase tracking-[0.3em] text-primary">AI Copilot</p>
-                </div>
-                <CardTitle className="text-2xl sm:text-3xl">Multi-Agent Workspace</CardTitle>
-                <p className="max-w-2xl text-sm leading-7 text-muted-foreground">
-                  Ask about spending, goals, investments, tax savings, or debt and get a structured response from the specialist agents.
-                </p>
+      <div ref={chatPageRef} className="mx-auto flex h-[calc(100vh-6rem)] w-full max-w-3xl flex-col">
+        {/* Scroll area */}
+        <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-4 pt-2">
+          {isEmpty ? (
+            <div data-animate="welcome" className="flex min-h-full flex-col items-center justify-center py-10 text-center">
+              <div className="flex size-16 items-center justify-center rounded-3xl border border-primary/25 bg-gradient-to-br from-primary/20 via-primary/10 to-transparent text-primary">
+                <Bot className="size-8" />
+              </div>
+              <h1 className="mt-6 text-3xl font-semibold tracking-tight sm:text-4xl">
+                How can I help with your money today?
+              </h1>
+              <p className="mt-3 max-w-lg text-sm leading-7 text-muted-foreground">
+                I'm your AI Copilot, powered by 6 specialist agents. I know your transactions, goals, and risk profile —
+                so I can give you answers that are actually about you.
+              </p>
+
+              <div className="mt-10 grid w-full gap-3 sm:grid-cols-2">
+                {STARTER_PROMPTS.map((p) => (
+                  <button
+                    key={p.label}
+                    type="button"
+                    onClick={() => submitPrompt(p.label)}
+                    disabled={streaming}
+                    className="group flex items-start gap-3 rounded-2xl border border-border/60 bg-card/60 px-4 py-3 text-left text-sm leading-6 text-foreground/85 transition hover:border-primary/40 hover:bg-primary/5 hover:text-foreground disabled:opacity-50"
+                  >
+                    <span className="text-lg">{p.emoji}</span>
+                    <span className="flex-1">{p.label}</span>
+                  </button>
+                ))}
               </div>
 
-              <div className="flex items-center gap-2 rounded-full border border-border/60 bg-background/35 px-3 py-2 text-xs text-muted-foreground">
-                <span className={`size-2 rounded-full ${streaming ? "animate-pulse bg-emerald-400" : "bg-primary"}`} />
-                {streaming ? "Agents analyzing live" : "Ready for a new question"}
-              </div>
+              <p className="mt-8 text-xs text-muted-foreground">
+                Tip: ask one focused question at a time for the sharpest answer.
+              </p>
             </div>
-          </CardHeader>
-
-          <CardContent className="flex h-[clamp(30rem,calc(100vh-14rem),46rem)] flex-col p-4 sm:p-6">
-            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
+          ) : (
+            <div className="space-y-5 py-4">
               {messages.map((message, index) => (
                 <ChatMessageBubble
                   key={`${message.role}-${index}`}
-                  message={{
-                    role: message.role,
-                    content: message.content,
-                    agents: message.agents,
-                  }}
+                  message={{ role: message.role, content: message.content, agents: message.agents }}
                 />
               ))}
 
@@ -247,65 +226,37 @@ export default function ChatPage() {
 
               <div ref={scrollRef} />
             </div>
+          )}
+        </div>
 
-            <div className="mt-5 rounded-[28px] border border-border/60 bg-background/35 p-3 shadow-[0_18px_45px_-35px_rgba(0,0,0,0.5)]">
-              <Textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Ask about spending, goals, investments, tax savings..."
-                className="min-h-24 resize-none border-0 bg-transparent px-1 shadow-none placeholder:text-muted-foreground/70 focus-visible:ring-0"
-                disabled={streaming}
-              />
-              <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-                <p className="text-xs leading-6 text-muted-foreground">
-                  Tip: ask one focused question for the cleanest recommendation.
-                </p>
-                <Button onClick={() => submitPrompt(input)} disabled={streaming || !input.trim()} className="min-w-36">
-                  {streaming ? (
-                    <>
-                      <Loader2 className="mr-2 size-4 animate-spin" />
-                      Thinking
-                    </>
-                  ) : (
-                    <>
-                      Ask Copilot
-                      <SendHorizontal className="ml-2 size-4" />
-                    </>
-                  )}
-                </Button>
-              </div>
+        {/* Composer */}
+        <div className="sticky bottom-0 border-t border-border/40 bg-background/90 pb-4 pt-3 backdrop-blur-xl">
+          <div className="relative flex items-end gap-2 rounded-[28px] border border-border/60 bg-card/80 px-3 py-2 shadow-[0_18px_45px_-30px_rgba(0,0,0,0.6)] focus-within:border-primary/40">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <User2 className="size-4" />
             </div>
-          </CardContent>
-        </Card>
-
-        <div className="space-y-6">
-          <AgentStatusCard agents={agentInfo} activeAgents={activeAgents} />
-
-          <Card data-animate="card" className="border-border/60 bg-card/80 shadow-[0_20px_50px_-35px_rgba(0,0,0,0.65)] backdrop-blur-xl">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Sparkles className="size-5 text-primary" />
-                Suggested prompts
-              </CardTitle>
-              <p className="text-xs text-muted-foreground">
-                Start with a specific question to get a sharper answer from the agents.
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {prompts.map((prompt) => (
-                <button
-                  key={prompt}
-                  type="button"
-                  onClick={() => submitPrompt(prompt)}
-                  disabled={streaming}
-                  className="w-full rounded-2xl border border-border/60 bg-background/35 px-4 py-3 text-left text-sm leading-7 text-muted-foreground transition hover:border-primary/30 hover:bg-primary/10 hover:text-foreground disabled:opacity-50"
-                >
-                  {prompt}
-                </button>
-              ))}
-            </CardContent>
-          </Card>
+            <Textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Message your AI Copilot..."
+              className="min-h-[44px] flex-1 resize-none border-0 bg-transparent px-1 py-2 shadow-none placeholder:text-muted-foreground/70 focus-visible:ring-0"
+              disabled={streaming}
+              rows={1}
+            />
+            <Button
+              onClick={() => submitPrompt(input)}
+              disabled={streaming || !input.trim()}
+              size="icon"
+              className="size-10 shrink-0 rounded-full"
+            >
+              {streaming ? <Loader2 className="size-4 animate-spin" /> : <ArrowUp className="size-4" />}
+            </Button>
+          </div>
+          <p className="mt-2 px-2 text-center text-[10px] text-muted-foreground">
+            <Sparkles className="mr-1 inline size-3 text-primary" />
+            Powered by 6 autonomous AI agents · Responses reflect your actual financial data
+          </p>
         </div>
       </div>
     </AppShell>

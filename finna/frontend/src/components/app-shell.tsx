@@ -9,6 +9,7 @@ import { useGSAP } from "@gsap/react";
 
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { SupportWidget } from "@/components/support-widget";
 import { cn } from "@/lib/utils";
 import { clearSession, getStoredUser } from "@/lib/auth";
 
@@ -16,7 +17,7 @@ gsap.registerPlugin(useGSAP);
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/analysis", label: "Analysis", icon: BarChart3 },
+  { href: "/analysis", label: "My Money Story", icon: BarChart3 },
   { href: "/transactions", label: "Transactions", icon: ReceiptText },
   { href: "/goals", label: "Goals", icon: Goal },
   { href: "/chat", label: "AI Copilot", icon: Bot },
@@ -169,6 +170,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
         <main ref={mainRef} className="min-w-0 flex-1">{children}</main>
       </div>
+      <SupportWidget />
     </div>
   );
 }
