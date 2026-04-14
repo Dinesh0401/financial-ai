@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, Loader2, Plus, RefreshCw, Target } from "lucide-react";
+import { AlertTriangle, Loader2, Plus, RefreshCw, Target, Trash2 } from "lucide-react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 
@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { formatCurrency, formatPercent } from "@/lib/format";
-import { API_BASE_URL, createGoal, getGoalPrediction, getGoals, isAuthenticated } from "@/lib/api";
+import { API_BASE_URL, createGoal, deleteGoal, getGoalPrediction, getGoals, isAuthenticated } from "@/lib/api";
 import type { GoalPrediction } from "@/lib/types";
 
 const GOAL_TYPES = [
@@ -63,6 +63,20 @@ export default function GoalsPage() {
   const [creating, setCreating] = useState(false);
   const [createMessage, setCreateMessage] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof NewGoalForm, string>>>({});
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  async function handleDeleteGoal(goalId: string, title: string) {
+    if (!confirm(`Delete goal "${title}"? This cannot be undone.`)) return;
+    setDeletingId(goalId);
+    try {
+      await deleteGoal(goalId);
+      setGoals((current) => current.filter((g) => g.goal.goal_id !== goalId));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete goal.");
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   function updateField<K extends keyof NewGoalForm>(key: K, rawValue: string) {
     let value = rawValue;
@@ -356,9 +370,26 @@ export default function GoalsPage() {
                           {goal.goal.timeline_months} months target
                         </p>
                       </div>
-                      <Badge className={goal.on_track ? "rounded-full bg-emerald-500/15 text-emerald-300" : "rounded-full bg-amber-500/15 text-amber-200"}>
-                        {goal.on_track ? "On track" : "Watch"}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge className={goal.on_track ? "rounded-full bg-emerald-500/15 text-emerald-300" : "rounded-full bg-amber-500/15 text-amber-200"}>
+                          {goal.on_track ? "On track" : "Watch"}
+                        </Badge>
+                        {goal.goal.goal_id && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteGoal(goal.goal.goal_id!, goal.goal.title)}
+                            disabled={deletingId === goal.goal.goal_id}
+                            className="rounded-lg border border-border/50 bg-background/40 p-2 text-muted-foreground transition hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-300 disabled:opacity-50"
+                            title="Delete goal"
+                          >
+                            {deletingId === goal.goal.goal_id ? (
+                              <Loader2 className="size-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="size-4" />
+                            )}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">

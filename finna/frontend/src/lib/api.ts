@@ -310,6 +310,13 @@ export async function createGoal(payload: {
   });
 }
 
+export async function deleteGoal(goalId: string): Promise<void> {
+  const response = await performRequest(`/v1/goals/${goalId}`, { method: "DELETE" });
+  if (!response.ok && response.status !== 204) {
+    throw new Error(`Failed to delete goal (${response.status})`);
+  }
+}
+
 export async function fetchWithAuth<T>(path: string): Promise<T> {
   return requestJson<T>(path);
 }

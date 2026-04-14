@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user
@@ -41,6 +41,19 @@ async def list_goals(
 ) -> GoalListResponse:
     goals = await service.list_goals(session=session, user=user)
     return GoalListResponse(goals=[GoalResponse.model_validate(goal) for goal in goals])
+
+
+@router.delete("/{goal_id}", status_code=204)
+async def delete_goal(
+    goal_id: str,
+    session: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+    service: GoalService = Depends(get_goal_service),
+) -> Response:
+    deleted = await service.delete_goal(session=session, user=user, goal_id=goal_id)
+    if not deleted:
+        raise AppError(status_code=404, title="Not found", detail="Goal not found.")
+    return Response(status_code=204)
 
 
 @router.get("/{goal_id}/prediction", response_model=GoalPredictionResponse)

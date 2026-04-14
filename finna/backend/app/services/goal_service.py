@@ -57,6 +57,18 @@ class GoalService:
             await session.execute(select(Goal).where(Goal.user_id == user.id).order_by(Goal.created_at.desc()))
         ).scalars().all()
 
+    async def delete_goal(self, *, session: AsyncSession, user: User, goal_id: str) -> bool:
+        goal = (
+            await session.execute(
+                select(Goal).where(Goal.user_id == user.id, Goal.goal_id == goal_id)
+            )
+        ).scalar_one_or_none()
+        if goal is None:
+            return False
+        await session.delete(goal)
+        await session.flush()
+        return True
+
     async def predict_goal(self, *, session: AsyncSession, user: User, goal_id: str) -> dict | None:
         goal = await session.scalar(select(Goal).where(Goal.goal_id == goal_id, Goal.user_id == user.id))
         if goal is None:
