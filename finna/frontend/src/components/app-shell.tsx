@@ -3,7 +3,7 @@
 import { useRef, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { BarChart3, Bot, Brain, Goal, LayoutDashboard, LogOut, Menu, Network, ReceiptText } from "lucide-react";
+import { BarChart3, BookOpen, Bot, Brain, Goal, LayoutDashboard, LogOut, Menu, Network, ReceiptText } from "lucide-react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 
@@ -20,6 +20,7 @@ const navItems = [
   { href: "/transactions", label: "Transactions", icon: ReceiptText },
   { href: "/goals", label: "Goals", icon: Goal },
   { href: "/chat", label: "AI Copilot", icon: Bot },
+  { href: "/guide", label: "How to Use", icon: BookOpen },
 ];
 
 const subscribeToStoredUser = () => () => {};
