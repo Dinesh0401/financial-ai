@@ -62,6 +62,27 @@ export default function GoalsPage() {
   const [form, setForm] = useState<NewGoalForm>(emptyForm);
   const [creating, setCreating] = useState(false);
   const [createMessage, setCreateMessage] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof NewGoalForm, string>>>({});
+
+  function updateField<K extends keyof NewGoalForm>(key: K, rawValue: string) {
+    let value = rawValue;
+    let err = "";
+
+    if (key === "target_amount" || key === "current_amount" || key === "timeline_months") {
+      // Only allow digits and one decimal point
+      const hadInvalid = /[^0-9.]/.test(rawValue) || (rawValue.match(/\./g)?.length ?? 0) > 1;
+      value = rawValue.replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1");
+      if (hadInvalid) err = "Numbers only";
+      else if (value && Number(value) <= 0 && key !== "current_amount") err = "Must be greater than 0";
+    }
+
+    if (key === "title" && rawValue.length > 0 && rawValue.trim().length === 0) {
+      err = "Title cannot be empty";
+    }
+
+    setFieldErrors((current) => ({ ...current, [key]: err }));
+    setForm((current) => ({ ...current, [key]: value }));
+  }
 
   async function loadGoals() {
     setLoading(true);
@@ -207,10 +228,11 @@ export default function GoalsPage() {
                         id="goal-type"
                         value={form.goal_type}
                         onChange={(e) => setForm((current) => ({ ...current, goal_type: e.target.value }))}
-                        className="h-11 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm outline-none transition focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30"
+                        style={{ colorScheme: "dark" }}
+                        className="h-11 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30"
                       >
                         {GOAL_TYPES.map((type) => (
-                          <option key={type.value} value={type.value}>
+                          <option key={type.value} value={type.value} className="bg-background text-foreground">
                             {type.label}
                           </option>
                         ))}
@@ -224,10 +246,13 @@ export default function GoalsPage() {
                       <Input
                         id="goal-title"
                         value={form.title}
-                        onChange={(e) => setForm((current) => ({ ...current, title: e.target.value }))}
+                        onChange={(e) => updateField("title", e.target.value)}
                         placeholder="e.g. Emergency Fund"
                         required
                       />
+                      {fieldErrors.title && (
+                        <p className="text-xs text-red-400">{fieldErrors.title}</p>
+                      )}
                     </div>
 
                     <div className="space-y-2">
@@ -238,10 +263,13 @@ export default function GoalsPage() {
                         id="goal-target"
                         inputMode="decimal"
                         value={form.target_amount}
-                        onChange={(e) => setForm((current) => ({ ...current, target_amount: e.target.value }))}
+                        onChange={(e) => updateField("target_amount", e.target.value)}
                         placeholder="500000"
                         required
                       />
+                      {fieldErrors.target_amount && (
+                        <p className="text-xs text-red-400">{fieldErrors.target_amount}</p>
+                      )}
                     </div>
 
                     <div className="space-y-2">
@@ -252,10 +280,13 @@ export default function GoalsPage() {
                         id="goal-timeline"
                         inputMode="numeric"
                         value={form.timeline_months}
-                        onChange={(e) => setForm((current) => ({ ...current, timeline_months: e.target.value }))}
+                        onChange={(e) => updateField("timeline_months", e.target.value)}
                         placeholder="12"
                         required
                       />
+                      {fieldErrors.timeline_months && (
+                        <p className="text-xs text-red-400">{fieldErrors.timeline_months}</p>
+                      )}
                     </div>
 
                     <div className="space-y-2">
@@ -266,9 +297,12 @@ export default function GoalsPage() {
                         id="goal-current"
                         inputMode="decimal"
                         value={form.current_amount}
-                        onChange={(e) => setForm((current) => ({ ...current, current_amount: e.target.value }))}
+                        onChange={(e) => updateField("current_amount", e.target.value)}
                         placeholder="0"
                       />
+                      {fieldErrors.current_amount && (
+                        <p className="text-xs text-red-400">{fieldErrors.current_amount}</p>
+                      )}
                     </div>
 
                     <div className="flex items-end">

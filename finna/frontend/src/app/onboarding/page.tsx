@@ -170,6 +170,8 @@ function FieldGroup({
   onChange,
   placeholder,
   prefix,
+  kind = "number",
+  max,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
@@ -177,23 +179,51 @@ function FieldGroup({
   onChange: (v: string) => void;
   placeholder: string;
   prefix?: string;
+  kind?: "number" | "text";
+  max?: number;
 }) {
+  const [error, setError] = useState("");
+
+  function handleChange(raw: string) {
+    if (kind === "text") {
+      onChange(raw);
+      return;
+    }
+    const hadInvalidChar = /[^0-9.]/.test(raw);
+    const cleaned = raw.replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1");
+    if (hadInvalidChar) {
+      setError("Numbers only");
+    } else if (cleaned && max !== undefined && Number(cleaned) > max) {
+      setError(`Must be ≤ ${max}`);
+    } else {
+      setError("");
+    }
+    onChange(cleaned);
+  }
+
   return (
     <div data-animate="field" className="space-y-1.5">
       <label className="text-xs font-medium tracking-wide text-white/50">{label}</label>
-      <div className="group relative flex items-center overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.03] transition-all focus-within:border-emerald-500/40 focus-within:bg-white/[0.05] focus-within:shadow-[0_0_20px_rgba(16,185,129,0.08)]">
+      <div
+        className={`group relative flex items-center overflow-hidden rounded-xl border bg-white/[0.03] transition-all focus-within:bg-white/[0.05] ${
+          error
+            ? "border-red-500/50 focus-within:border-red-500/60 focus-within:shadow-[0_0_20px_rgba(239,68,68,0.12)]"
+            : "border-white/[0.06] focus-within:border-emerald-500/40 focus-within:shadow-[0_0_20px_rgba(16,185,129,0.08)]"
+        }`}
+      >
         <div className="flex size-10 shrink-0 items-center justify-center text-white/25 group-focus-within:text-emerald-400/60">
           {prefix ? <span className="text-base">{prefix}</span> : <Icon className="size-4" />}
         </div>
         <input
           type="text"
-          inputMode="decimal"
+          inputMode={kind === "number" ? "decimal" : "text"}
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => handleChange(e.target.value)}
           placeholder={placeholder}
           className="h-12 w-full bg-transparent pr-4 text-sm text-white outline-none placeholder:text-white/20"
         />
       </div>
+      {error && <p className="text-xs text-red-400">{error}</p>}
     </div>
   );
 }
@@ -394,6 +424,7 @@ function StepLoans({
               value={loan.name}
               onChange={(v) => updateLoan(loan.id, { name: v })}
               placeholder="e.g., SBI Home Loan"
+              kind="text"
             />
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
@@ -419,6 +450,7 @@ function StepLoans({
               value={loan.rate}
               onChange={(v) => updateLoan(loan.id, { rate: v })}
               placeholder="e.g. 8.5"
+              max={100}
             />
           </div>
         </div>
@@ -487,6 +519,7 @@ function StepGoals({
               value={goal.name}
               onChange={(v) => updateGoal(goal.id, { name: v })}
               placeholder="e.g. House Downpayment"
+              kind="text"
             />
             <div className="space-y-1.5">
               <label className="text-xs font-medium tracking-wide text-white/50">Priority</label>

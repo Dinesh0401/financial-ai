@@ -113,9 +113,9 @@ export default function AnalysisPage() {
                 </>
               ) : (
                 <>
-                  <p className="mt-2 text-2xl font-semibold">Benchmark unavailable</p>
+                  <p className="mt-2 text-2xl font-semibold">Your personal insight</p>
                   <p className="mt-2 text-sm text-muted-foreground">
-                    {health.comparison.note || "Peer comparisons are shown only after enough real analyzed accounts exist."}
+                    Showing individual analysis for now. Peer benchmarks unlock automatically as more data is analyzed.
                   </p>
                 </>
               )}
