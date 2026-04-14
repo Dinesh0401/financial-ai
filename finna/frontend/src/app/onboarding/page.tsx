@@ -172,6 +172,8 @@ function FieldGroup({
   prefix,
   kind = "number",
   max,
+  required = false,
+  showRequiredError = false,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
@@ -181,10 +183,14 @@ function FieldGroup({
   prefix?: string;
   kind?: "number" | "text";
   max?: number;
+  required?: boolean;
+  showRequiredError?: boolean;
 }) {
   const [error, setError] = useState("");
+  const [touched, setTouched] = useState(false);
 
   function handleChange(raw: string) {
+    setTouched(true);
     if (kind === "text") {
       onChange(raw);
       return;
@@ -201,12 +207,23 @@ function FieldGroup({
     onChange(cleaned);
   }
 
+  const isEmpty =
+    !value.trim() || (kind === "number" && Number(value) <= 0);
+  const requiredErr =
+    required && isEmpty && (touched || showRequiredError)
+      ? "This field is required"
+      : "";
+  const displayError = error || requiredErr;
+
   return (
     <div data-animate="field" className="space-y-1.5">
-      <label className="text-xs font-medium tracking-wide text-white/50">{label}</label>
+      <label className="flex items-center gap-1 text-xs font-medium tracking-wide text-white/50">
+        {label}
+        {required && <span className="text-red-400">*</span>}
+      </label>
       <div
         className={`group relative flex items-center overflow-hidden rounded-xl border bg-white/[0.03] transition-all focus-within:bg-white/[0.05] ${
-          error
+          displayError
             ? "border-red-500/50 focus-within:border-red-500/60 focus-within:shadow-[0_0_20px_rgba(239,68,68,0.12)]"
             : "border-white/[0.06] focus-within:border-emerald-500/40 focus-within:shadow-[0_0_20px_rgba(16,185,129,0.08)]"
         }`}
@@ -219,11 +236,12 @@ function FieldGroup({
           inputMode={kind === "number" ? "decimal" : "text"}
           value={value}
           onChange={(e) => handleChange(e.target.value)}
+          onBlur={() => setTouched(true)}
           placeholder={placeholder}
           className="h-12 w-full bg-transparent pr-4 text-sm text-white outline-none placeholder:text-white/20"
         />
       </div>
-      {error && <p className="text-xs text-red-400">{error}</p>}
+      {displayError && <p className="text-xs text-red-400">{displayError}</p>}
     </div>
   );
 }
@@ -233,9 +251,11 @@ function FieldGroup({
 function StepIncome({
   data,
   onChange,
+  showErrors,
 }: {
   data: IncomeData;
   onChange: (d: IncomeData) => void;
+  showErrors: boolean;
 }) {
   const total =
     parseNum(data.salary) +
@@ -260,6 +280,8 @@ function StepIncome({
           onChange={(v) => onChange({ ...data, salary: v })}
           placeholder="e.g. 80000"
           prefix="₹"
+          required
+          showRequiredError={showErrors}
         />
         <FieldGroup
           icon={BriefcaseBusiness}
@@ -358,9 +380,11 @@ function StepExpenses({
 function StepLoans({
   loans,
   onChange,
+  showErrors,
 }: {
   loans: LoanEntry[];
   onChange: (l: LoanEntry[]) => void;
+  showErrors: boolean;
 }) {
   function addLoan() {
     onChange([
@@ -401,12 +425,16 @@ function StepLoans({
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <label className="text-xs font-medium tracking-wide text-white/50">Loan Type</label>
+              <label className="flex items-center gap-1 text-xs font-medium tracking-wide text-white/50">
+                Loan Type <span className="text-red-400">*</span>
+              </label>
               <select
                 value={loan.type}
                 onChange={(e) => updateLoan(loan.id, { type: e.target.value })}
                 style={{ colorScheme: "dark" }}
-                className="h-12 w-full rounded-xl border border-emerald-500/15 bg-black/35 px-3 text-sm text-white outline-none focus:border-emerald-500/40"
+                className={`h-12 w-full rounded-xl border bg-black/35 px-3 text-sm text-white outline-none focus:border-emerald-500/40 ${
+                  showErrors && !loan.type ? "border-red-500/50" : "border-emerald-500/15"
+                }`}
               >
                 <option value="" className="bg-[#04110a] text-white">
                   Select an option
@@ -417,6 +445,9 @@ function StepLoans({
                   </option>
                 ))}
               </select>
+              {showErrors && !loan.type && (
+                <p className="text-xs text-red-400">This field is required</p>
+              )}
             </div>
             <FieldGroup
               icon={CreditCard}
@@ -425,6 +456,8 @@ function StepLoans({
               onChange={(v) => updateLoan(loan.id, { name: v })}
               placeholder="e.g., SBI Home Loan"
               kind="text"
+              required
+              showRequiredError={showErrors}
             />
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
@@ -435,6 +468,8 @@ function StepLoans({
               onChange={(v) => updateLoan(loan.id, { balance: v })}
               placeholder="Outstanding Balance"
               prefix="₹"
+              required
+              showRequiredError={showErrors}
             />
             <FieldGroup
               icon={Banknote}
@@ -443,6 +478,8 @@ function StepLoans({
               onChange={(v) => updateLoan(loan.id, { emi: v })}
               placeholder="Monthly EMI"
               prefix="₹"
+              required
+              showRequiredError={showErrors}
             />
             <FieldGroup
               icon={TrendingUp}
@@ -451,6 +488,8 @@ function StepLoans({
               onChange={(v) => updateLoan(loan.id, { rate: v })}
               placeholder="e.g. 8.5"
               max={100}
+              required
+              showRequiredError={showErrors}
             />
           </div>
         </div>
@@ -471,9 +510,11 @@ function StepLoans({
 function StepGoals({
   goals,
   onChange,
+  showErrors,
 }: {
   goals: GoalEntry[];
   onChange: (g: GoalEntry[]) => void;
+  showErrors: boolean;
 }) {
   function addGoal() {
     onChange([
@@ -520,6 +561,8 @@ function StepGoals({
               onChange={(v) => updateGoal(goal.id, { name: v })}
               placeholder="e.g. House Downpayment"
               kind="text"
+              required
+              showRequiredError={showErrors}
             />
             <div className="space-y-1.5">
               <label className="text-xs font-medium tracking-wide text-white/50">Priority</label>
@@ -543,6 +586,8 @@ function StepGoals({
               onChange={(v) => updateGoal(goal.id, { target: v })}
               placeholder="500000"
               prefix="₹"
+              required
+              showRequiredError={showErrors}
             />
             <div className="space-y-1.5">
               <label className="text-xs font-medium tracking-wide text-white/50">Goal Type</label>
@@ -582,6 +627,7 @@ export default function OnboardingPage() {
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [showErrors, setShowErrors] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const pageRef = useRef<HTMLDivElement>(null);
 
@@ -674,15 +720,51 @@ export default function OnboardingPage() {
     parseNum(income.rental) +
     parseNum(income.other);
 
+  function validateCurrentStep(): boolean {
+    if (step === 0) {
+      return parseNum(income.salary) > 0;
+    }
+    if (step === 2) {
+      return loans.every(
+        (l) =>
+          Boolean(l.type) &&
+          l.name.trim().length > 0 &&
+          parseNum(l.balance) > 0 &&
+          parseNum(l.emi) > 0 &&
+          parseNum(l.rate) > 0,
+      );
+    }
+    if (step === 3) {
+      return goals.every(
+        (g) => g.name.trim().length > 0 && parseNum(g.target) > 0,
+      );
+    }
+    return true;
+  }
+
   function next() {
+    if (!validateCurrentStep()) {
+      setShowErrors(true);
+      setError("Please fill all required fields marked with *.");
+      return;
+    }
+    setShowErrors(false);
+    setError("");
     if (step < 3) setStep(step + 1);
   }
 
   function back() {
+    setShowErrors(false);
+    setError("");
     if (step > 0) setStep(step - 1);
   }
 
   async function handleSubmit() {
+    if (!validateCurrentStep()) {
+      setShowErrors(true);
+      setError("Please fill all required fields marked with *.");
+      return;
+    }
     setSubmitting(true);
     setError("");
 
@@ -750,12 +832,12 @@ export default function OnboardingPage() {
           data-animate="card"
           className="rounded-3xl border border-emerald-500/12 bg-black/38 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.62),inset_0_1px_0_rgba(255,255,255,0.03)] backdrop-blur-xl sm:p-8"
         >
-          {step === 0 && <StepIncome data={income} onChange={setIncome} />}
+          {step === 0 && <StepIncome data={income} onChange={setIncome} showErrors={showErrors} />}
           {step === 1 && (
             <StepExpenses data={expenses} onChange={setExpenses} totalIncome={totalIncome} />
           )}
-          {step === 2 && <StepLoans loans={loans} onChange={setLoans} />}
-          {step === 3 && <StepGoals goals={goals} onChange={setGoals} />}
+          {step === 2 && <StepLoans loans={loans} onChange={setLoans} showErrors={showErrors} />}
+          {step === 3 && <StepGoals goals={goals} onChange={setGoals} showErrors={showErrors} />}
 
           {error && (
             <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/[0.06] px-4 py-2 text-sm text-red-300">

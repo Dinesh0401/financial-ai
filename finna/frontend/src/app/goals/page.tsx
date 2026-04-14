@@ -240,8 +240,8 @@ export default function GoalsPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm text-muted-foreground" htmlFor="goal-title">
-                        Title
+                      <label className="flex items-center gap-1 text-sm text-muted-foreground" htmlFor="goal-title">
+                        Title <span className="text-red-400">*</span>
                       </label>
                       <Input
                         id="goal-title"
@@ -256,8 +256,8 @@ export default function GoalsPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm text-muted-foreground" htmlFor="goal-target">
-                        Target amount (Rs)
+                      <label className="flex items-center gap-1 text-sm text-muted-foreground" htmlFor="goal-target">
+                        Target amount (Rs) <span className="text-red-400">*</span>
                       </label>
                       <Input
                         id="goal-target"
@@ -273,8 +273,8 @@ export default function GoalsPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm text-muted-foreground" htmlFor="goal-timeline">
-                        Timeline (months)
+                      <label className="flex items-center gap-1 text-sm text-muted-foreground" htmlFor="goal-timeline">
+                        Timeline (months) <span className="text-red-400">*</span>
                       </label>
                       <Input
                         id="goal-timeline"
