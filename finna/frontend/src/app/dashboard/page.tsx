@@ -7,6 +7,7 @@ import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 
 import { AppShell } from "@/components/app-shell";
+import { AIInsights } from "@/components/ai-insights";
 import { HealthGauge } from "@/components/health-gauge";
 import { SpendingBreakdown } from "@/components/spending-breakdown";
 import { Badge } from "@/components/ui/badge";
@@ -367,6 +368,13 @@ export default function DashboardPage() {
             )}
           </CardContent>
         </Card>
+
+        <AIInsights
+          income={dashboard.monthly_overview.income}
+          expenses={dashboard.monthly_overview.expenses}
+          savings={dashboard.monthly_overview.savings}
+          categoryTotals={dashboard.spending_breakdown}
+        />
       </div>
     </AppShell>
   );

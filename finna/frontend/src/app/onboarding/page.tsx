@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import {
   Banknote,
   BriefcaseBusiness,
+  Check,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   CreditCard,
@@ -113,6 +115,73 @@ function parseNum(v: string): number {
 }
 
 /* ---------- components ---------- */
+
+type DropdownOption = { value: string; label: string };
+
+function Dropdown({
+  value,
+  onChange,
+  options,
+  placeholder = "Select an option",
+  error,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: DropdownOption[];
+  placeholder?: string;
+  error?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open]);
+
+  const selected = options.find((o) => o.value === value);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className={`flex h-12 w-full items-center justify-between rounded-xl border bg-black/35 px-3 text-left text-sm text-white outline-none transition-colors focus:border-emerald-500/40 ${
+          error ? "border-red-500/50" : "border-emerald-500/15"
+        }`}
+      >
+        <span className={selected ? "text-white" : "text-white/40"}>
+          {selected ? selected.label : placeholder}
+        </span>
+        <ChevronDown className={`size-4 text-white/50 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <div className="absolute left-0 right-0 top-full z-30 mt-2 max-h-64 overflow-y-auto rounded-xl border border-emerald-500/20 bg-[#0c1220] p-1 shadow-[0_20px_45px_-15px_rgba(0,0,0,0.8)]">
+          {options.map((o) => {
+            const active = o.value === value;
+            return (
+              <button
+                key={o.value}
+                type="button"
+                onClick={() => { onChange(o.value); setOpen(false); }}
+                className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm transition-colors ${
+                  active ? "bg-emerald-500/15 text-emerald-300" : "text-white/85 hover:bg-white/5 hover:text-white"
+                }`}
+              >
+                <span>{o.label}</span>
+                {active && <Check className="size-4" />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function StepIndicator({ current }: { current: number }) {
   return (
@@ -406,7 +475,7 @@ function StepLoans({
       <div>
         <h2 className="text-2xl font-bold text-white">Active Loans & Debt</h2>
         <p className="mt-1 text-sm text-white/40">
-          List your outstanding liabilities for an AI-optimized payoff strategy.
+          Optional — skip this step if you have no active loans. Listing them unlocks an AI-optimized payoff strategy.
         </p>
       </div>
 
@@ -425,29 +494,13 @@ function StepLoans({
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <label className="flex items-center gap-1 text-xs font-medium tracking-wide text-white/50">
-                Loan Type <span className="text-red-400">*</span>
-              </label>
-              <select
+              <label className="text-xs font-medium tracking-wide text-white/50">Loan Type</label>
+              <Dropdown
                 value={loan.type}
-                onChange={(e) => updateLoan(loan.id, { type: e.target.value })}
-                style={{ colorScheme: "dark" }}
-                className={`h-12 w-full rounded-xl border bg-black/35 px-3 text-sm text-white outline-none focus:border-emerald-500/40 ${
-                  showErrors && !loan.type ? "border-red-500/50" : "border-emerald-500/15"
-                }`}
-              >
-                <option value="" className="bg-[#04110a] text-white">
-                  Select an option
-                </option>
-                {LOAN_TYPES.map((t) => (
-                  <option key={t} value={t} className="bg-[#04110a] text-white">
-                    {t}
-                  </option>
-                ))}
-              </select>
-              {showErrors && !loan.type && (
-                <p className="text-xs text-red-400">This field is required</p>
-              )}
+                onChange={(v) => updateLoan(loan.id, { type: v })}
+                options={LOAN_TYPES.map((t) => ({ value: t, label: t }))}
+                placeholder="Select an option"
+              />
             </div>
             <FieldGroup
               icon={CreditCard}
@@ -456,8 +509,6 @@ function StepLoans({
               onChange={(v) => updateLoan(loan.id, { name: v })}
               placeholder="e.g., SBI Home Loan"
               kind="text"
-              required
-              showRequiredError={showErrors}
             />
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
@@ -468,8 +519,6 @@ function StepLoans({
               onChange={(v) => updateLoan(loan.id, { balance: v })}
               placeholder="Outstanding Balance"
               prefix="₹"
-              required
-              showRequiredError={showErrors}
             />
             <FieldGroup
               icon={Banknote}
@@ -478,8 +527,6 @@ function StepLoans({
               onChange={(v) => updateLoan(loan.id, { emi: v })}
               placeholder="Monthly EMI"
               prefix="₹"
-              required
-              showRequiredError={showErrors}
             />
             <FieldGroup
               icon={TrendingUp}
@@ -488,8 +535,6 @@ function StepLoans({
               onChange={(v) => updateLoan(loan.id, { rate: v })}
               placeholder="e.g. 8.5"
               max={100}
-              required
-              showRequiredError={showErrors}
             />
           </div>
         </div>
@@ -566,16 +611,15 @@ function StepGoals({
             />
             <div className="space-y-1.5">
               <label className="text-xs font-medium tracking-wide text-white/50">Priority</label>
-              <select
+              <Dropdown
                 value={goal.priority}
-                onChange={(e) => updateGoal(goal.id, { priority: e.target.value })}
-                style={{ colorScheme: "dark" }}
-                className="h-12 w-full rounded-xl border border-emerald-500/15 bg-black/35 px-3 text-sm text-white outline-none focus:border-emerald-500/40"
-              >
-                <option value="high" className="bg-[#04110a] text-white">High Priority</option>
-                <option value="medium" className="bg-[#04110a] text-white">Medium Priority</option>
-                <option value="low" className="bg-[#04110a] text-white">Low Priority</option>
-              </select>
+                onChange={(v) => updateGoal(goal.id, { priority: v })}
+                options={[
+                  { value: "high", label: "High Priority" },
+                  { value: "medium", label: "Medium Priority" },
+                  { value: "low", label: "Low Priority" },
+                ]}
+              />
             </div>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -591,18 +635,11 @@ function StepGoals({
             />
             <div className="space-y-1.5">
               <label className="text-xs font-medium tracking-wide text-white/50">Goal Type</label>
-              <select
+              <Dropdown
                 value={goal.type}
-                onChange={(e) => updateGoal(goal.id, { type: e.target.value })}
-                style={{ colorScheme: "dark" }}
-                className="h-12 w-full rounded-xl border border-emerald-500/15 bg-black/35 px-3 text-sm text-white outline-none focus:border-emerald-500/40"
-              >
-                {GOAL_TYPES.map((t) => (
-                  <option key={t.value} value={t.value} className="bg-[#04110a] text-white">
-                    {t.label}
-                  </option>
-                ))}
-              </select>
+                onChange={(v) => updateGoal(goal.id, { type: v })}
+                options={GOAL_TYPES.map((t) => ({ value: t.value, label: t.label }))}
+              />
             </div>
           </div>
         </div>
@@ -725,14 +762,7 @@ export default function OnboardingPage() {
       return parseNum(income.salary) > 0;
     }
     if (step === 2) {
-      return loans.every(
-        (l) =>
-          Boolean(l.type) &&
-          l.name.trim().length > 0 &&
-          parseNum(l.balance) > 0 &&
-          parseNum(l.emi) > 0 &&
-          parseNum(l.rate) > 0,
-      );
+      return true;
     }
     if (step === 3) {
       return goals.every(
