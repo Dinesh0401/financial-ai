@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import {
   Banknote,
@@ -132,9 +133,14 @@ function Dropdown({
   error?: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const btnRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -143,8 +149,20 @@ function Dropdown({
       if (btnRef.current?.contains(t) || panelRef.current?.contains(t)) return;
       setOpen(false);
     };
+    const recalc = () => {
+      if (btnRef.current) {
+        const r = btnRef.current.getBoundingClientRect();
+        setPos({ top: r.bottom + 8, left: r.left, width: r.width });
+      }
+    };
     document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
+    window.addEventListener("scroll", recalc, true);
+    window.addEventListener("resize", recalc);
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      window.removeEventListener("scroll", recalc, true);
+      window.removeEventListener("resize", recalc);
+    };
   }, [open]);
 
   function toggle() {
@@ -156,6 +174,31 @@ function Dropdown({
   }
 
   const selected = options.find((o) => o.value === value);
+
+  const panel = open ? (
+    <div
+      ref={panelRef}
+      className="fixed max-h-64 overflow-y-auto rounded-xl border border-emerald-500/20 bg-[#0c1220] p-1 shadow-[0_20px_45px_-15px_rgba(0,0,0,0.8)]"
+      style={{ zIndex: 9999, top: pos.top, left: pos.left, width: pos.width }}
+    >
+      {options.map((o) => {
+        const active = o.value === value;
+        return (
+          <button
+            key={o.value}
+            type="button"
+            onClick={() => { onChange(o.value); setOpen(false); }}
+            className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm transition-colors ${
+              active ? "bg-emerald-500/15 text-emerald-300" : "text-white/85 hover:bg-white/5 hover:text-white"
+            }`}
+          >
+            <span>{o.label}</span>
+            {active && <Check className="size-4" />}
+          </button>
+        );
+      })}
+    </div>
+  ) : null;
 
   return (
     <>
@@ -172,30 +215,7 @@ function Dropdown({
         </span>
         <ChevronDown className={`size-4 text-white/50 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
-      {open && (
-        <div
-          ref={panelRef}
-          className="fixed max-h-64 overflow-y-auto rounded-xl border border-emerald-500/20 bg-[#0c1220] p-1 shadow-[0_20px_45px_-15px_rgba(0,0,0,0.8)]"
-          style={{ zIndex: 9999, top: pos.top, left: pos.left, width: pos.width }}
-        >
-          {options.map((o) => {
-            const active = o.value === value;
-            return (
-              <button
-                key={o.value}
-                type="button"
-                onClick={() => { onChange(o.value); setOpen(false); }}
-                className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm transition-colors ${
-                  active ? "bg-emerald-500/15 text-emerald-300" : "text-white/85 hover:bg-white/5 hover:text-white"
-                }`}
-              >
-                <span>{o.label}</span>
-                {active && <Check className="size-4" />}
-              </button>
-            );
-          })}
-        </div>
-      )}
+      {mounted && panel ? createPortal(panel, document.body) : null}
     </>
   );
 }
