@@ -132,24 +132,37 @@ function Dropdown({
   error?: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
 
   useEffect(() => {
     if (!open) return;
     const onDoc = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      const t = e.target as Node;
+      if (btnRef.current?.contains(t) || panelRef.current?.contains(t)) return;
+      setOpen(false);
     };
     document.addEventListener("mousedown", onDoc);
     return () => document.removeEventListener("mousedown", onDoc);
   }, [open]);
 
+  function toggle() {
+    if (!open && btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect();
+      setPos({ top: r.bottom + 8, left: r.left, width: r.width });
+    }
+    setOpen((v) => !v);
+  }
+
   const selected = options.find((o) => o.value === value);
 
   return (
-    <div ref={ref} className="relative">
+    <>
       <button
+        ref={btnRef}
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={toggle}
         className={`flex h-12 w-full items-center justify-between rounded-xl border bg-black/35 px-3 text-left text-sm text-white outline-none transition-colors focus:border-emerald-500/40 ${
           error ? "border-red-500/50" : "border-emerald-500/15"
         }`}
@@ -160,7 +173,11 @@ function Dropdown({
         <ChevronDown className={`size-4 text-white/50 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
       {open && (
-        <div className="absolute left-0 right-0 top-full z-30 mt-2 max-h-64 overflow-y-auto rounded-xl border border-emerald-500/20 bg-[#0c1220] p-1 shadow-[0_20px_45px_-15px_rgba(0,0,0,0.8)]">
+        <div
+          ref={panelRef}
+          className="fixed max-h-64 overflow-y-auto rounded-xl border border-emerald-500/20 bg-[#0c1220] p-1 shadow-[0_20px_45px_-15px_rgba(0,0,0,0.8)]"
+          style={{ zIndex: 9999, top: pos.top, left: pos.left, width: pos.width }}
+        >
           {options.map((o) => {
             const active = o.value === value;
             return (
@@ -179,7 +196,7 @@ function Dropdown({
           })}
         </div>
       )}
-    </div>
+    </>
   );
 }
 

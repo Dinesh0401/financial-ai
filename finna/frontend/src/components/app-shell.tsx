@@ -2,7 +2,7 @@
 
 import { useRef, useSyncExternalStore } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { BarChart3, BookOpen, Bot, Brain, Goal, LayoutDashboard, LogOut, Menu, Network, ReceiptText } from "lucide-react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
@@ -109,17 +109,21 @@ function NavContent() {
 }
 
 function LogoutButton() {
-  const router = useRouter();
   const userLabel = useSyncExternalStore(
     subscribeToStoredUser,
     getStoredUserLabelSnapshot,
     () => null,
   );
 
+  function handleLogout() {
+    clearSession();
+    window.location.href = "/login";
+  }
+
   return (
     <button
       type="button"
-      onClick={() => { clearSession(); router.push("/login"); }}
+      onClick={handleLogout}
       className="flex w-full items-center gap-3 rounded-2xl border border-border/50 bg-background/30 px-4 py-3 text-sm text-muted-foreground transition hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-300"
     >
       <LogOut className="size-4" />
