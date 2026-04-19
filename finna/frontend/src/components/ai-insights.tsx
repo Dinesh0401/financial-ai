@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   AlertTriangle,
+  BarChart3,
   Brain,
   CreditCard,
   Info,
@@ -14,6 +15,7 @@ import {
   TrendingUp,
   Wallet,
 } from "lucide-react";
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 import {
   calculateGoalProbability,
@@ -219,6 +221,43 @@ export function AIInsights({ fallback }: Props) {
             <p className="mt-6 text-sm text-muted-foreground">No active loans. Add one in onboarding to see a payoff plan.</p>
           )}
         </div>
+      </div>
+
+      <div className="rounded-3xl border border-border/60 bg-card/70 p-5">
+        <div className="flex items-center gap-2">
+          <BarChart3 className="size-4 text-primary" />
+          <p className="text-sm font-semibold">Where your money goes</p>
+        </div>
+        {(() => {
+          const chartData = Object.entries(data.expenses)
+            .map(([k, v]) => ({ name: k.replace(/_/g, " "), value: v }))
+            .filter((e) => e.value > 0)
+            .sort((a, b) => b.value - a.value);
+          if (chartData.length === 0) {
+            return (
+              <p className="mt-4 text-sm text-muted-foreground">
+                No expenses captured. Edit your onboarding to add category spend.
+              </p>
+            );
+          }
+          return (
+            <div className="mt-4 h-[260px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} layout="vertical" margin={{ top: 4, right: 24, left: 16, bottom: 4 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                  <XAxis type="number" tick={{ fill: "rgba(255,255,255,0.55)", fontSize: 11 }} tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} />
+                  <YAxis type="category" dataKey="name" width={100} tick={{ fill: "rgba(255,255,255,0.75)", fontSize: 12, textTransform: "capitalize" }} />
+                  <Tooltip
+                    contentStyle={{ background: "rgb(8,18,12)", border: "1px solid rgba(16,185,129,0.3)", borderRadius: 12 }}
+                    formatter={(v: number) => [`₹${v.toLocaleString("en-IN")}`, "Spent"]}
+                    cursor={{ fill: "rgba(16,185,129,0.08)" }}
+                  />
+                  <Bar dataKey="value" radius={[0, 8, 8, 0]} fill="rgb(52,211,153)" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          );
+        })()}
       </div>
 
       <div className="rounded-3xl border border-border/60 bg-card/70 p-5">

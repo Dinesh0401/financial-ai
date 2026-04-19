@@ -205,13 +205,11 @@ export default function DashboardPage() {
                   {state.error ?? "The backend did not return your live financial data."}
                 </p>
               </div>
-              <div className="flex flex-wrap justify-center gap-3">
-                <Button onClick={() => router.refresh()}>Retry</Button>
+              <div className="flex justify-center">
                 <Button
-                  variant="outline"
                   onClick={() => {
                     clearSession();
-                    router.replace("/login");
+                    window.location.href = "/login";
                   }}
                 >
                   Sign in again
