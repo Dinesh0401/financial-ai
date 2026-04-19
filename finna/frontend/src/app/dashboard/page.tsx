@@ -370,10 +370,12 @@ export default function DashboardPage() {
         </Card>
 
         <AIInsights
-          income={dashboard.monthly_overview.income}
-          expenses={dashboard.monthly_overview.expenses}
-          savings={dashboard.monthly_overview.savings}
-          categoryTotals={dashboard.spending_breakdown}
+          fallback={{
+            income: dashboard.monthly_overview.income,
+            expenses: dashboard.monthly_overview.expenses,
+            savings: dashboard.monthly_overview.savings,
+            categoryTotals: dashboard.spending_breakdown,
+          }}
         />
       </div>
     </AppShell>

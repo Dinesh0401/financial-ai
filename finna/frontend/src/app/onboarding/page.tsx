@@ -32,6 +32,7 @@ import { useGSAP } from "@gsap/react";
 
 import { isAuthenticated } from "@/lib/auth";
 import { createGoal, updateCurrentUser } from "@/lib/api";
+import { saveOnboardingSnapshot } from "@/lib/ai/engine";
 
 gsap.registerPlugin(useGSAP);
 
@@ -178,8 +179,15 @@ function Dropdown({
   const panel = open ? (
     <div
       ref={panelRef}
-      className="fixed max-h-64 overflow-y-auto rounded-xl border border-emerald-500/20 bg-[#0c1220] p-1 shadow-[0_20px_45px_-15px_rgba(0,0,0,0.8)]"
-      style={{ zIndex: 9999, top: pos.top, left: pos.left, width: pos.width }}
+      className="fixed max-h-64 overflow-y-auto rounded-xl border border-emerald-500/20 p-1 shadow-[0_20px_45px_-15px_rgba(0,0,0,0.8)]"
+      style={{
+        zIndex: 9999,
+        top: pos.top,
+        left: pos.left,
+        width: pos.width,
+        backgroundColor: "rgb(8, 18, 12)",
+        opacity: 1,
+      }}
     >
       {options.map((o) => {
         const active = o.value === value;
@@ -836,7 +844,39 @@ export default function OnboardingPage() {
     setError("");
 
     try {
-      // 1. Save profile with total income
+      saveOnboardingSnapshot({
+        income: totalIncome,
+        expenses: {
+          rent_housing: parseNum(expenses.rent_housing),
+          food_dining: parseNum(expenses.food_dining),
+          transport: parseNum(expenses.transport),
+          utilities: parseNum(expenses.utilities),
+          entertainment: parseNum(expenses.entertainment),
+          shopping: parseNum(expenses.shopping),
+          healthcare: parseNum(expenses.healthcare),
+          education: parseNum(expenses.education),
+          other: parseNum(expenses.other),
+        },
+        loans: loans
+          .filter((l) => parseNum(l.balance) > 0 || parseNum(l.emi) > 0)
+          .map((l) => ({
+            type: l.type || "other",
+            name: l.name,
+            balance: parseNum(l.balance),
+            emi: parseNum(l.emi),
+            interest: parseNum(l.rate),
+          })),
+        goals: goals
+          .filter((g) => g.name.trim() && parseNum(g.target) > 0)
+          .map((g) => ({
+            type: g.type,
+            name: g.name.trim(),
+            targetAmount: parseNum(g.target),
+            years: g.priority === "high" ? 1 : g.priority === "medium" ? 2 : 3,
+            priority: g.priority as "high" | "medium" | "low",
+          })),
+      });
+
       await updateCurrentUser({
         monthly_income: totalIncome || null,
         onboarding_done: true,
