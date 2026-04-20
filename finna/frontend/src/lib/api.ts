@@ -320,3 +320,48 @@ export async function deleteGoal(goalId: string): Promise<void> {
 export async function fetchWithAuth<T>(path: string): Promise<T> {
   return requestJson<T>(path);
 }
+
+export type OnboardingSnapshotApi = {
+  income: number;
+  expenses: Record<string, number>;
+  loans: {
+    type: string;
+    name?: string;
+    balance: number;
+    emi: number;
+    interest: number;
+  }[];
+  goals: {
+    type: string;
+    name?: string;
+    targetAmount: number;
+    years: number;
+    priority?: "high" | "medium" | "low";
+  }[];
+  savedAt?: string;
+};
+
+export async function getOnboardingSnapshotApi(): Promise<OnboardingSnapshotApi | null> {
+  try {
+    const resp = await requestJson<{
+      snapshot: OnboardingSnapshotApi | null;
+      saved_at: string | null;
+    }>("/v1/onboarding/snapshot");
+    return resp.snapshot ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export async function saveOnboardingSnapshotApi(
+  snapshot: Omit<OnboardingSnapshotApi, "savedAt">,
+): Promise<OnboardingSnapshotApi | null> {
+  const resp = await requestJson<{
+    snapshot: OnboardingSnapshotApi | null;
+    saved_at: string | null;
+  }>("/v1/onboarding/snapshot", {
+    method: "POST",
+    body: JSON.stringify(snapshot),
+  });
+  return resp.snapshot ?? null;
+}

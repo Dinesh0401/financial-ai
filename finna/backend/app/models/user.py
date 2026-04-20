@@ -8,7 +8,7 @@ from sqlalchemy import Boolean, DateTime, Index, Numeric, func
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.types import String
 
-from app.models.base import Base, UUIDType
+from app.models.base import Base, JSONType, UUIDType
 
 
 class User(Base):
@@ -27,6 +27,7 @@ class User(Base):
     currency: Mapped[str] = mapped_column(String(3), nullable=False, default="INR")
     tax_regime: Mapped[str] = mapped_column(String(10), nullable=False, default="new")
     onboarding_done: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    onboarding_snapshot: Mapped[dict | None] = mapped_column(JSONType(), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),

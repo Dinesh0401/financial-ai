@@ -3,7 +3,7 @@
 import { useRef, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, BookOpen, Bot, Brain, Goal, LayoutDashboard, LogOut, Menu, Network, ReceiptText } from "lucide-react";
+import { BarChart3, BookOpen, Bot, Brain, Goal, LayoutDashboard, LogOut, Menu, ReceiptText, Sparkles } from "lucide-react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 
@@ -65,13 +65,19 @@ function NavContent() {
     <div ref={navRef} className="flex h-full min-h-0 flex-col gap-6 overflow-y-auto rounded-[28px] border border-border/70 bg-sidebar/80 p-5 surface-glow backdrop-blur-xl">
       <div data-animate="nav-logo">
         <div className="flex items-center gap-2">
-          <Brain className="size-5 text-primary" />
-          <p className="text-xs uppercase tracking-[0.32em] text-primary">Ai Agent</p>
+          <div className="flex size-8 items-center justify-center rounded-xl bg-primary/15 text-primary ring-1 ring-primary/30">
+            <Brain className="size-4" />
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-primary">Finna</p>
+            <h1 className="text-lg font-semibold tracking-tight leading-none">Financial Copilot</h1>
+          </div>
         </div>
-        <h1 className="mt-3 text-2xl font-semibold tracking-tight">Financial Assistant</h1>
-        <p className="mt-2 text-sm text-muted-foreground">Your Future Money Saver</p>
+        <p className="mt-3 text-xs leading-5 text-muted-foreground">
+          Deterministic agent pipeline for your money — analyze, plan, decide.
+        </p>
       </div>
-      <nav className="flex flex-col gap-2">
+      <nav className="flex flex-col gap-1">
         {navItems.map(({ href, label, icon: Icon }) => {
           const active = pathname === href;
           return (
@@ -80,14 +86,17 @@ function NavContent() {
               href={href}
               data-animate="nav-link"
               className={cn(
-                "flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm transition-all",
+                "group relative flex items-center gap-3 rounded-2xl border px-3.5 py-2.5 text-sm transition-all",
                 active
-                  ? "border-primary/40 bg-primary/15 text-foreground"
-                  : "border-transparent bg-background/0 text-muted-foreground hover:border-border hover:bg-background/70 hover:text-foreground",
+                  ? "border-primary/40 bg-primary/15 text-foreground shadow-[inset_0_0_0_1px_rgba(16,185,129,0.08)]"
+                  : "border-transparent bg-background/0 text-muted-foreground hover:border-border hover:bg-background/60 hover:text-foreground",
               )}
             >
-              <Icon className="size-4" />
-              {label}
+              {active && (
+                <span className="absolute left-0 top-1/2 h-6 w-0.5 -translate-y-1/2 rounded-r-full bg-primary" />
+              )}
+              <Icon className={cn("size-4", active ? "text-primary" : "text-muted-foreground group-hover:text-foreground")} />
+              <span className="flex-1">{label}</span>
             </Link>
           );
         })}
@@ -95,11 +104,11 @@ function NavContent() {
       <div className="mt-auto space-y-3" data-animate="nav-footer">
         <div className="rounded-2xl border border-primary/25 bg-primary/10 p-4 text-sm">
           <div className="flex items-center gap-2">
-            <Network className="size-4 text-primary" />
-            <p className="font-medium text-primary">6 AI Agents Active</p>
+            <Sparkles className="size-4 text-primary" />
+            <p className="font-medium text-primary">Rule-based pipeline</p>
           </div>
-          <p className="mt-2 text-muted-foreground">
-            Expense, Debt, Goal, Risk, Investment & Tax agents running autonomous analysis on your data.
+          <p className="mt-2 text-xs leading-5 text-muted-foreground">
+            Expense · Debt · Risk · Goal · Investment · Orchestrator — deterministic scoring on your snapshot.
           </p>
         </div>
         <LogoutButton />
@@ -155,10 +164,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="mb-4 flex items-center justify-between lg:hidden">
           <div className="flex items-center gap-2">
-            <Brain className="size-4 text-primary" />
+            <div className="flex size-8 items-center justify-center rounded-xl bg-primary/15 text-primary ring-1 ring-primary/30">
+              <Brain className="size-4" />
+            </div>
             <div>
-              <p className="text-xs uppercase tracking-[0.32em] text-primary">Ai Agent</p>
-              <h1 className="text-xl font-semibold">Financial Assistant</h1>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-primary">Finna</p>
+              <h1 className="text-lg font-semibold leading-none">Financial Copilot</h1>
             </div>
           </div>
           <Sheet>

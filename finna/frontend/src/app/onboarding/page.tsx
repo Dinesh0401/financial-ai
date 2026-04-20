@@ -32,7 +32,7 @@ import { useGSAP } from "@gsap/react";
 
 import { isAuthenticated } from "@/lib/auth";
 import { createGoal, updateCurrentUser } from "@/lib/api";
-import { saveOnboardingSnapshot } from "@/lib/ai/engine";
+import { fetchOnboardingSnapshot, persistOnboardingSnapshot } from "@/lib/ai/engine";
 
 gsap.registerPlugin(useGSAP);
 
@@ -177,35 +177,46 @@ function Dropdown({
   const selected = options.find((o) => o.value === value);
 
   const panel = open ? (
-    <div
-      ref={panelRef}
-      className="fixed max-h-64 overflow-y-auto rounded-xl border border-emerald-500/20 p-1 shadow-[0_20px_45px_-15px_rgba(0,0,0,0.8)]"
-      style={{
-        zIndex: 9999,
-        top: pos.top,
-        left: pos.left,
-        width: pos.width,
-        backgroundColor: "rgb(8, 18, 12)",
-        opacity: 1,
-      }}
-    >
-      {options.map((o) => {
-        const active = o.value === value;
-        return (
-          <button
-            key={o.value}
-            type="button"
-            onClick={() => { onChange(o.value); setOpen(false); }}
-            className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm transition-colors ${
-              active ? "bg-emerald-500/15 text-emerald-300" : "text-white/85 hover:bg-white/5 hover:text-white"
-            }`}
-          >
-            <span>{o.label}</span>
-            {active && <Check className="size-4" />}
-          </button>
-        );
-      })}
-    </div>
+    <>
+      <div
+        onClick={() => setOpen(false)}
+        className="fixed inset-0 bg-black/70 backdrop-blur-sm"
+        style={{ zIndex: 9998, isolation: "isolate" }}
+        aria-hidden
+      />
+      <div
+        ref={panelRef}
+        className="fixed max-h-64 overflow-y-auto rounded-xl border border-emerald-500/25 p-1 shadow-[0_24px_60px_-10px_rgba(0,0,0,0.95)]"
+        style={{
+          zIndex: 9999,
+          top: pos.top,
+          left: pos.left,
+          width: pos.width,
+          background: "#020607",
+          backgroundColor: "#020607",
+          isolation: "isolate",
+          opacity: 1,
+        }}
+      >
+        {options.map((o) => {
+          const active = o.value === value;
+          return (
+            <button
+              key={o.value}
+              type="button"
+              onClick={() => { onChange(o.value); setOpen(false); }}
+              style={{ backgroundColor: active ? "rgba(16,185,129,0.15)" : "#020607" }}
+              className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm transition-colors ${
+                active ? "text-emerald-300" : "text-white/85 hover:text-white"
+              }`}
+            >
+              <span>{o.label}</span>
+              {active && <Check className="size-4" />}
+            </button>
+          );
+        })}
+      </div>
+    </>
   ) : null;
 
   return (
@@ -434,10 +445,12 @@ function StepExpenses({
   data,
   onChange,
   totalIncome,
+  showErrors,
 }: {
   data: ExpenseData;
   onChange: (d: ExpenseData) => void;
   totalIncome: number;
+  showErrors: boolean;
 }) {
   const fields: {
     key: keyof ExpenseData;
@@ -484,9 +497,15 @@ function StepExpenses({
             value={data[f.key]}
             onChange={(v) => onChange({ ...data, [f.key]: v })}
             placeholder="0"
+            prefix="₹"
           />
         ))}
       </div>
+      {showErrors && totalExpenses <= 0 && (
+        <p className="text-xs text-red-400">
+          Fill at least one expense category — we need a spend baseline to build your plan.
+        </p>
+      )}
     </div>
   );
 }
@@ -709,6 +728,7 @@ export default function OnboardingPage() {
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [showErrors, setShowErrors] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const pageRef = useRef<HTMLDivElement>(null);
@@ -792,7 +812,59 @@ export default function OnboardingPage() {
   useEffect(() => {
     if (!isAuthenticated()) {
       router.replace("/login");
+      return;
     }
+    let cancelled = false;
+    (async () => {
+      const snap = await fetchOnboardingSnapshot();
+      if (cancelled || !snap) return;
+      if (snap.income > 0) {
+        setIncome({
+          salary: String(snap.income),
+          freelance: "",
+          rental: "",
+          other: "",
+        });
+      }
+      const e = snap.expenses ?? {};
+      setExpenses({
+        rent_housing: e.rent_housing ? String(e.rent_housing) : "",
+        food_dining: e.food_dining ? String(e.food_dining) : "",
+        transport: e.transport ? String(e.transport) : "",
+        utilities: e.utilities ? String(e.utilities) : "",
+        entertainment: e.entertainment ? String(e.entertainment) : "",
+        shopping: e.shopping ? String(e.shopping) : "",
+        healthcare: e.healthcare ? String(e.healthcare) : "",
+        education: e.education ? String(e.education) : "",
+        other: e.other ? String(e.other) : "",
+      });
+      if (Array.isArray(snap.loans) && snap.loans.length > 0) {
+        setLoans(
+          snap.loans.map((l) => ({
+            id: uid(),
+            type: l.type ?? "",
+            name: l.name ?? "",
+            balance: l.balance ? String(l.balance) : "",
+            emi: l.emi ? String(l.emi) : "",
+            rate: l.interest ? String(l.interest) : "",
+          })),
+        );
+      }
+      if (Array.isArray(snap.goals) && snap.goals.length > 0) {
+        setGoals(
+          snap.goals.map((g) => ({
+            id: uid(),
+            name: g.name ?? "",
+            priority: g.priority ?? "medium",
+            target: g.targetAmount ? String(g.targetAmount) : "",
+            type: g.type ?? "custom",
+          })),
+        );
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -802,49 +874,102 @@ export default function OnboardingPage() {
     parseNum(income.rental) +
     parseNum(income.other);
 
-  function validateCurrentStep(): boolean {
+  function validateCurrentStep(): { ok: boolean; error?: string; notice?: string } {
     if (step === 0) {
-      return parseNum(income.salary) > 0;
+      if (totalIncome <= 0) {
+        return { ok: false, error: "Enter at least your salary to continue." };
+      }
+      return { ok: true };
+    }
+    if (step === 1) {
+      const totalExp = Object.values(expenses).reduce((s, v) => s + parseNum(v), 0);
+      if (totalExp <= 0) {
+        return {
+          ok: false,
+          error: "Fill at least one expense category — we need a spend baseline to build your plan.",
+        };
+      }
+      if (totalExp > totalIncome * 2 && totalIncome > 0) {
+        return {
+          ok: true,
+          notice: `Expenses (₹${totalExp.toLocaleString("en-IN")}) look unrealistically high vs income. Double-check before continuing.`,
+        };
+      }
+      if (totalExp > totalIncome && totalIncome > 0) {
+        return {
+          ok: true,
+          notice: `Your expenses exceed income by ₹${(totalExp - totalIncome).toLocaleString("en-IN")}/mo — we'll flag this in your plan.`,
+        };
+      }
+      return { ok: true };
     }
     if (step === 2) {
-      return true;
+      for (const l of loans) {
+        const rate = parseNum(l.rate);
+        if (rate > 50) {
+          return { ok: false, error: "Interest rate must be ≤ 50%. Check the value you entered." };
+        }
+        const bal = parseNum(l.balance);
+        const emi = parseNum(l.emi);
+        if (bal > 0 && emi > bal) {
+          return { ok: false, error: "Monthly EMI cannot exceed the outstanding balance." };
+        }
+      }
+      return { ok: true };
     }
     if (step === 3) {
-      return goals.every(
+      const incomplete = goals.some(
+        (g) => (g.name.trim() && parseNum(g.target) <= 0) ||
+               (!g.name.trim() && parseNum(g.target) > 0),
+      );
+      if (incomplete) {
+        return { ok: false, error: "Each goal needs both a name and a target amount." };
+      }
+      const hasAtLeastOne = goals.some(
         (g) => g.name.trim().length > 0 && parseNum(g.target) > 0,
       );
+      if (!hasAtLeastOne) {
+        return { ok: false, error: "Add at least one goal with a name and target amount." };
+      }
+      return { ok: true };
     }
-    return true;
+    return { ok: true };
   }
 
   function next() {
-    if (!validateCurrentStep()) {
+    const v = validateCurrentStep();
+    if (!v.ok) {
       setShowErrors(true);
-      setError("Please fill all required fields marked with *.");
+      setError(v.error || "Please fill all required fields marked with *.");
+      setNotice("");
       return;
     }
     setShowErrors(false);
     setError("");
+    setNotice(v.notice || "");
     if (step < 3) setStep(step + 1);
   }
 
   function back() {
     setShowErrors(false);
     setError("");
+    setNotice("");
     if (step > 0) setStep(step - 1);
   }
 
   async function handleSubmit() {
-    if (!validateCurrentStep()) {
+    const v = validateCurrentStep();
+    if (!v.ok) {
       setShowErrors(true);
-      setError("Please fill all required fields marked with *.");
+      setError(v.error || "Please fill all required fields marked with *.");
       return;
     }
     setSubmitting(true);
     setError("");
+    setNotice("");
 
     try {
-      saveOnboardingSnapshot({
+      await persistOnboardingSnapshot({
         income: totalIncome,
         expenses: {
           rent_housing: parseNum(expenses.rent_housing),
@@ -924,9 +1049,18 @@ export default function OnboardingPage() {
 
       <div className="relative z-10 w-full max-w-3xl px-4 py-12">
         {/* Title */}
-        <h1 data-animate="title" className="mb-10 text-center text-3xl font-bold tracking-tight text-white md:text-4xl">
-          Your Financial Foundation
-        </h1>
+        <div data-animate="title" className="mb-10 text-center">
+          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.06] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-emerald-300">
+            <Sparkles className="size-3" />
+            Onboarding · Step {step + 1} of {STEPS.length}
+          </div>
+          <h1 className="mt-4 text-balance text-3xl font-bold tracking-tight text-white md:text-[2.5rem]">
+            Your <span className="bg-gradient-to-r from-emerald-300 to-emerald-500 bg-clip-text text-transparent">Financial Foundation</span>
+          </h1>
+          <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-white/40">
+            A clean baseline — income, spend, loans, goals. It feeds every diagnostic on the dashboard.
+          </p>
+        </div>
 
         {/* Step indicator */}
         <div data-animate="indicator" className="mb-10">
@@ -941,7 +1075,12 @@ export default function OnboardingPage() {
         >
           {step === 0 && <StepIncome data={income} onChange={setIncome} showErrors={showErrors} />}
           {step === 1 && (
-            <StepExpenses data={expenses} onChange={setExpenses} totalIncome={totalIncome} />
+            <StepExpenses
+              data={expenses}
+              onChange={setExpenses}
+              totalIncome={totalIncome}
+              showErrors={showErrors}
+            />
           )}
           {step === 2 && <StepLoans loans={loans} onChange={setLoans} showErrors={showErrors} />}
           {step === 3 && <StepGoals goals={goals} onChange={setGoals} showErrors={showErrors} />}
@@ -949,6 +1088,11 @@ export default function OnboardingPage() {
           {error && (
             <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/[0.06] px-4 py-2 text-sm text-red-300">
               {error}
+            </div>
+          )}
+          {!error && notice && (
+            <div className="mt-4 rounded-xl border border-amber-400/30 bg-amber-500/[0.08] px-4 py-2 text-sm text-amber-200">
+              {notice}
             </div>
           )}
 
@@ -1000,8 +1144,8 @@ export default function OnboardingPage() {
           </div>
         </div>
 
-        <p data-animate="footer" className="mt-6 text-center text-xs text-white/15">
-          Your data is encrypted and never shared. Powered by 6 autonomous AI agents.
+        <p data-animate="footer" className="mt-6 text-center text-xs text-white/25">
+          Stored securely against your account · deterministic analysis, no ML model.
         </p>
       </div>
 

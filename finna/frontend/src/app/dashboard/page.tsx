@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, Brain, Loader2, Network } from "lucide-react";
+import Link from "next/link";
+import { AlertTriangle, ArrowDownRight, ArrowUpRight, Loader2, PencilLine, PiggyBank, Sparkles } from "lucide-react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 
@@ -16,7 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getCurrentUser, getDashboardData, getHealthScore, updateCurrentUser } from "@/lib/api";
-import { clearSession, isAuthenticated } from "@/lib/auth";
+import { isAuthenticated } from "@/lib/auth";
 import type { DashboardData, HealthScoreData, UserProfile } from "@/lib/types";
 
 gsap.registerPlugin(useGSAP);
@@ -200,19 +201,14 @@ export default function DashboardPage() {
             <CardContent className="space-y-4 p-8 text-center">
               <AlertTriangle className="mx-auto size-8 text-primary" />
               <div className="space-y-2">
-                <h2 className="text-2xl font-semibold">Live dashboard unavailable</h2>
+                <h2 className="text-2xl font-semibold">Couldn&apos;t load your dashboard</h2>
                 <p className="text-sm leading-7 text-muted-foreground">
-                  {state.error ?? "The backend did not return your live financial data."}
+                  {state.error ?? "We hit a snag pulling your latest data. Try reloading — your session is still active."}
                 </p>
               </div>
-              <div className="flex justify-center">
-                <Button
-                  onClick={() => {
-                    clearSession();
-                    window.location.href = "/login";
-                  }}
-                >
-                  Sign in again
+              <div className="flex justify-center gap-2">
+                <Button onClick={() => window.location.reload()}>
+                  Try again
                 </Button>
               </div>
             </CardContent>
@@ -225,39 +221,79 @@ export default function DashboardPage() {
   const dashboard = state.dashboard;
   const health = state.health;
   const profile = state.profile;
-  const liveLabel = profile.onboarding_done ? "Live data connected" : "Live data connected, profile needs completion";
+  const liveLabel = profile.onboarding_done ? "Live snapshot synced" : "Live data connected · onboarding incomplete";
+
+  const incomeAmt = dashboard.monthly_overview.income;
+  const expenseAmt = dashboard.monthly_overview.expenses;
+  const savingsAmt = dashboard.monthly_overview.savings;
+  const savingsPct = incomeAmt > 0 ? Math.round((savingsAmt / incomeAmt) * 100) : 0;
+  const firstName = profile.name?.split(" ")[0] ?? null;
 
   return (
     <AppShell>
       <div ref={pageRef} className="space-y-6">
-        <div data-animate="status" className="flex items-center justify-between gap-4">
+        <div data-animate="status" className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="relative inline-flex size-2">
+              <span className="absolute inset-0 animate-ping rounded-full bg-emerald-400/60" />
+              <span className="relative size-2 rounded-full bg-emerald-400" />
+            </span>
             <span className="text-xs text-muted-foreground">{liveLabel}</span>
           </div>
-          <div className="hidden items-center gap-1.5 sm:flex">
-            <Network className="size-3.5 text-primary" />
-            <span className="text-[10px] uppercase tracking-wider text-primary">Agents Active</span>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/onboarding?edit=1"
+              className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.18em] text-primary transition hover:bg-primary/20"
+            >
+              <PencilLine className="size-3.5" />
+              Edit financial data
+            </Link>
           </div>
         </div>
 
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(320px,0.7fr)]">
-          <Card data-animate="hero" className="grid-stripes border-border/60 bg-card/70 backdrop-blur-xl">
-            <CardContent className="grid gap-8 p-6 xl:grid-cols-[minmax(0,1fr)_220px]">
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
+          <Card data-animate="hero" className="relative overflow-hidden border-border/60 bg-card/70 backdrop-blur-xl">
+            <div className="pointer-events-none absolute -right-16 -top-16 size-72 rounded-full bg-primary/15 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-24 -left-10 size-72 rounded-full bg-emerald-400/10 blur-3xl" />
+            <CardContent className="relative grid gap-8 p-6 xl:grid-cols-[minmax(0,1fr)_240px]">
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <Brain className="size-4 text-primary" />
-                  <p className="text-xs uppercase tracking-[0.3em] text-primary">AI-Powered Dashboard</p>
+                  <Sparkles className="size-4 text-primary" />
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-primary">Financial Copilot</p>
                 </div>
-                <h2 data-animate="hero-heading" className="mt-4 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-                  {profile.name ? `${profile.name}, here is your live financial intelligence.` : "Your live financial intelligence."}
+                <h2 data-animate="hero-heading" className="mt-4 text-balance text-3xl font-semibold tracking-tight text-foreground sm:text-[2.35rem]">
+                  {firstName ? (
+                    <>Hey <span className="bg-gradient-to-r from-primary to-emerald-300 bg-clip-text text-transparent">{firstName}</span>, here&apos;s your money in one glance.</>
+                  ) : (
+                    <>Your money in one glance.</>
+                  )}
                 </h2>
-                <p className="mt-4 max-w-2xl text-sm leading-7 text-muted-foreground">
-                  Real backend data only. No mock values, no fake fallback numbers, just your authenticated financial profile and analysis.
+                <p className="mt-3 max-w-2xl text-sm leading-7 text-muted-foreground">
+                  Authenticated snapshot from your onboarding data — no mock values. Scroll for the full diagnostic breakdown.
                 </p>
-                <div className="mt-6 flex flex-col gap-2">
-                  {dashboard.quick_insights.length > 0 ? (
-                    dashboard.quick_insights.map((insight) => (
+                <div className="mt-6 grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-2xl border border-border/50 bg-background/40 p-3">
+                    <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+                      <ArrowUpRight className="size-3.5 text-emerald-300" /> Income
+                    </div>
+                    <p className="mt-2 text-lg font-semibold text-foreground">₹{incomeAmt.toLocaleString("en-IN")}</p>
+                  </div>
+                  <div className="rounded-2xl border border-border/50 bg-background/40 p-3">
+                    <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+                      <ArrowDownRight className="size-3.5 text-rose-300" /> Expenses
+                    </div>
+                    <p className="mt-2 text-lg font-semibold text-foreground">₹{expenseAmt.toLocaleString("en-IN")}</p>
+                  </div>
+                  <div className="rounded-2xl border border-primary/30 bg-primary/10 p-3">
+                    <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-primary">
+                      <PiggyBank className="size-3.5" /> Saves · {savingsPct}%
+                    </div>
+                    <p className="mt-2 text-lg font-semibold text-foreground">₹{savingsAmt.toLocaleString("en-IN")}</p>
+                  </div>
+                </div>
+                {dashboard.quick_insights.length > 0 && (
+                  <div className="mt-5 flex flex-col gap-2">
+                    {dashboard.quick_insights.map((insight) => (
                       <Badge
                         key={insight}
                         data-animate="badge"
@@ -266,17 +302,9 @@ export default function DashboardPage() {
                       >
                         {insight}
                       </Badge>
-                    ))
-                  ) : (
-                    <Badge
-                      data-animate="badge"
-                      variant="outline"
-                      className="w-full justify-start whitespace-normal break-words rounded-2xl border-border/60 bg-background/30 px-3 py-2 text-left text-xs leading-5 text-muted-foreground"
-                    >
-                      Add transactions to unlock live insights.
-                    </Badge>
-                  )}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
               <div data-animate="gauge" className="flex min-h-[220px] items-center justify-center xl:justify-end">
                 <HealthGauge score={health.score} />
@@ -285,8 +313,12 @@ export default function DashboardPage() {
           </Card>
 
           <Card data-animate="profile" className="h-fit border-border/60 bg-card/80 backdrop-blur-xl">
-            <CardHeader>
-              <CardTitle className="text-xl">Profile intake</CardTitle>
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <PencilLine className="size-4 text-primary" />
+                <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-primary">Profile</p>
+              </div>
+              <CardTitle className="mt-1 text-lg">Quick details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -353,15 +385,19 @@ export default function DashboardPage() {
         </div>
 
         <Card data-animate="spending" className="border-border/60 bg-card/80 backdrop-blur-xl">
-          <CardHeader>
-            <CardTitle className="text-xl">Spending mix</CardTitle>
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <ArrowDownRight className="size-4 text-primary" />
+              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-primary">Spending</p>
+            </div>
+            <CardTitle className="mt-1 text-lg">Where your money flows</CardTitle>
           </CardHeader>
           <CardContent>
             {Object.keys(dashboard.spending_breakdown).length > 0 ? (
               <SpendingBreakdown data={dashboard.spending_breakdown} />
             ) : (
               <div className="rounded-3xl border border-dashed border-border/60 bg-background/25 p-8 text-center text-sm text-muted-foreground">
-                No spending categories yet.
+                No spending categories yet — add them in onboarding.
               </div>
             )}
           </CardContent>
