@@ -50,6 +50,7 @@ type ExpenseData = {
   food_dining: string;
   transport: string;
   utilities: string;
+  emi_loan: string;
   entertainment: string;
   shopping: string;
   healthcare: string;
@@ -332,11 +333,10 @@ function FieldGroup({
     onChange(cleaned);
   }
 
-  const isEmpty =
-    !value.trim() || (kind === "number" && Number(value) <= 0);
+  const isEmpty = !value.trim();
   const requiredErr =
     required && isEmpty && (touched || showRequiredError)
-      ? "This field is required"
+      ? "Required (enter 0 if none)"
       : "";
   const displayError = error || requiredErr;
 
@@ -456,16 +456,18 @@ function StepExpenses({
     key: keyof ExpenseData;
     label: string;
     icon: React.ComponentType<{ className?: string }>;
+    required: boolean;
   }[] = [
-    { key: "rent_housing", label: "Rent / Housing", icon: Home },
-    { key: "food_dining", label: "Food & Dining", icon: Utensils },
-    { key: "transport", label: "Transport", icon: Train },
-    { key: "utilities", label: "Utilities", icon: Zap },
-    { key: "entertainment", label: "Entertainment", icon: Tv },
-    { key: "shopping", label: "Shopping", icon: ShoppingBag },
-    { key: "healthcare", label: "Healthcare", icon: Heart },
-    { key: "education", label: "Education", icon: GraduationCap },
-    { key: "other", label: "Other", icon: Plus },
+    { key: "rent_housing", label: "Rent / Housing", icon: Home, required: true },
+    { key: "food_dining", label: "Food & Dining", icon: Utensils, required: true },
+    { key: "transport", label: "Transport", icon: Train, required: true },
+    { key: "utilities", label: "Utilities", icon: Zap, required: true },
+    { key: "emi_loan", label: "EMI / Loan Payment", icon: CreditCard, required: true },
+    { key: "entertainment", label: "Entertainment", icon: Tv, required: false },
+    { key: "shopping", label: "Shopping", icon: ShoppingBag, required: false },
+    { key: "healthcare", label: "Healthcare", icon: Heart, required: false },
+    { key: "education", label: "Education", icon: GraduationCap, required: false },
+    { key: "other", label: "Other", icon: Plus, required: false },
   ];
 
   const totalExpenses = Object.values(data).reduce((s, v) => s + parseNum(v), 0);
@@ -498,9 +500,14 @@ function StepExpenses({
             onChange={(v) => onChange({ ...data, [f.key]: v })}
             placeholder="0"
             prefix="₹"
+            required={f.required}
+            showRequiredError={showErrors}
           />
         ))}
       </div>
+      <p className="text-[11px] text-white/35">
+        <span className="text-red-400">*</span> Required categories. Enter 0 if it doesn&apos;t apply to you.
+      </p>
       {showErrors && totalExpenses <= 0 && (
         <p className="text-xs text-red-400">
           Fill at least one expense category — we need a spend baseline to build your plan.
@@ -794,6 +801,7 @@ export default function OnboardingPage() {
     food_dining: "",
     transport: "",
     utilities: "",
+    emi_loan: "",
     entertainment: "",
     shopping: "",
     healthcare: "",
@@ -828,15 +836,16 @@ export default function OnboardingPage() {
       }
       const e = snap.expenses ?? {};
       setExpenses({
-        rent_housing: e.rent_housing ? String(e.rent_housing) : "",
-        food_dining: e.food_dining ? String(e.food_dining) : "",
-        transport: e.transport ? String(e.transport) : "",
-        utilities: e.utilities ? String(e.utilities) : "",
-        entertainment: e.entertainment ? String(e.entertainment) : "",
-        shopping: e.shopping ? String(e.shopping) : "",
-        healthcare: e.healthcare ? String(e.healthcare) : "",
-        education: e.education ? String(e.education) : "",
-        other: e.other ? String(e.other) : "",
+        rent_housing: e.rent_housing != null ? String(e.rent_housing) : "",
+        food_dining: e.food_dining != null ? String(e.food_dining) : "",
+        transport: e.transport != null ? String(e.transport) : "",
+        utilities: e.utilities != null ? String(e.utilities) : "",
+        emi_loan: e.emi_loan != null ? String(e.emi_loan) : "",
+        entertainment: e.entertainment != null ? String(e.entertainment) : "",
+        shopping: e.shopping != null ? String(e.shopping) : "",
+        healthcare: e.healthcare != null ? String(e.healthcare) : "",
+        education: e.education != null ? String(e.education) : "",
+        other: e.other != null ? String(e.other) : "",
       });
       if (Array.isArray(snap.loans) && snap.loans.length > 0) {
         setLoans(
@@ -882,11 +891,25 @@ export default function OnboardingPage() {
       return { ok: true };
     }
     if (step === 1) {
+      const requiredKeys: (keyof ExpenseData)[] = [
+        "rent_housing",
+        "food_dining",
+        "transport",
+        "utilities",
+        "emi_loan",
+      ];
+      const missing = requiredKeys.filter((k) => !expenses[k].trim());
+      if (missing.length > 0) {
+        return {
+          ok: false,
+          error: "Fill every required category (enter 0 if it doesn't apply).",
+        };
+      }
       const totalExp = Object.values(expenses).reduce((s, v) => s + parseNum(v), 0);
       if (totalExp <= 0) {
         return {
           ok: false,
-          error: "Fill at least one expense category — we need a spend baseline to build your plan.",
+          error: "At least one category must be greater than 0 — we need a spend baseline.",
         };
       }
       if (totalExp > totalIncome * 2 && totalIncome > 0) {
@@ -976,6 +999,7 @@ export default function OnboardingPage() {
           food_dining: parseNum(expenses.food_dining),
           transport: parseNum(expenses.transport),
           utilities: parseNum(expenses.utilities),
+          emi_loan: parseNum(expenses.emi_loan),
           entertainment: parseNum(expenses.entertainment),
           shopping: parseNum(expenses.shopping),
           healthcare: parseNum(expenses.healthcare),
