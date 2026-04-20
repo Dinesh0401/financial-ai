@@ -74,270 +74,246 @@ export default function LoginPage() {
   }
 
   const rootRef = useRef<HTMLDivElement>(null);
-  const formBoxRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const fieldsRef = useRef<HTMLDivElement>(null);
 
   useGSAP(
     () => {
       if (!rootRef.current) return;
       const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
-      const header = rootRef.current.querySelector("[data-animate='header']");
+      const brand = rootRef.current.querySelector("[data-animate='brand']");
+      const headline = rootRef.current.querySelector("[data-animate='headline']");
+      const sub = rootRef.current.querySelector("[data-animate='sub']");
       const card = rootRef.current.querySelector("[data-animate='card']");
-      const info = rootRef.current.querySelector("[data-animate='info']");
-      const footer = rootRef.current.querySelector("[data-animate='footer']");
-      const orbs = rootRef.current.querySelectorAll("[data-orb]");
+      const foot = rootRef.current.querySelector("[data-animate='foot']");
 
-      gsap.set(orbs, { autoAlpha: 0, scale: 0.7 });
-      gsap.to(orbs, { autoAlpha: 1, scale: 1, duration: 1.4, stagger: 0.15, ease: "power2.out" });
-      gsap.to(orbs, {
-        x: "+=30",
-        y: "+=20",
-        duration: 9,
-        yoyo: true,
-        repeat: -1,
-        ease: "sine.inOut",
-        stagger: { each: 1.5, from: "random" },
-      });
-
-      if (header) tl.fromTo(header, { autoAlpha: 0, y: -14 }, { autoAlpha: 1, y: 0, duration: 0.55 });
-      if (card) tl.fromTo(card, { autoAlpha: 0, y: 24, scale: 0.97 }, { autoAlpha: 1, y: 0, scale: 1, duration: 0.65, ease: "back.out(1.3)" }, "-=0.25");
-      if (info) tl.fromTo(info, { autoAlpha: 0, y: 14 }, { autoAlpha: 1, y: 0, duration: 0.45 }, "-=0.3");
-      if (footer) tl.fromTo(footer, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.4 }, "-=0.25");
+      if (brand) tl.fromTo(brand, { autoAlpha: 0, y: -12 }, { autoAlpha: 1, y: 0, duration: 0.5 });
+      if (headline) tl.fromTo(headline, { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, duration: 0.65 }, "-=0.25");
+      if (sub) tl.fromTo(sub, { autoAlpha: 0, y: 10 }, { autoAlpha: 1, y: 0, duration: 0.5 }, "-=0.4");
+      if (card) tl.fromTo(card, { autoAlpha: 0, y: 22 }, { autoAlpha: 1, y: 0, duration: 0.6, ease: "power2.out" }, "-=0.35");
+      if (foot) tl.fromTo(foot, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.5 }, "-=0.25");
     },
     { scope: rootRef },
   );
 
-  // Animate field block on mode switch
   useGSAP(
     () => {
-      if (!formBoxRef.current) return;
+      if (!fieldsRef.current) return;
       gsap.fromTo(
-        formBoxRef.current.querySelectorAll("[data-field]"),
-        { autoAlpha: 0, y: 10 },
-        { autoAlpha: 1, y: 0, duration: 0.4, stagger: 0.06, ease: "power2.out" },
+        fieldsRef.current.querySelectorAll("[data-field]"),
+        { autoAlpha: 0, y: 8 },
+        { autoAlpha: 1, y: 0, duration: 0.35, stagger: 0.05, ease: "power2.out" },
       );
     },
-    { dependencies: [mode], scope: formBoxRef },
+    { dependencies: [mode], scope: fieldsRef },
   );
 
-  const headline = mode === "login" ? "Welcome back" : "Create your account";
-  const subcopy =
-    mode === "login"
-      ? "Your future money saver. Sign in to pick up where you left off."
-      : "Your future money saver. A minute of setup, then honest numbers only.";
+  const isLogin = mode === "login";
 
   return (
     <div
       ref={rootRef}
-      className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10"
+      className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#050607] px-4 py-12"
     >
-      {/* Background stack */}
+      {/* Background */}
       <div className="pointer-events-none absolute inset-0">
-        {/* Soft base gradient */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(16,185,129,0.12),_transparent_55%),radial-gradient(ellipse_at_bottom,_rgba(45,212,191,0.08),_transparent_60%)]" />
-        {/* Grid with radial mask */}
         <div
-          className="absolute inset-0 opacity-[0.12]"
-          style={{
-            backgroundImage:
-              "linear-gradient(to right, rgba(255,255,255,0.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.06) 1px, transparent 1px)",
-            backgroundSize: "44px 44px",
-            maskImage: "radial-gradient(ellipse at center, black 35%, transparent 75%)",
-            WebkitMaskImage: "radial-gradient(ellipse at center, black 35%, transparent 75%)",
-          }}
-        />
-        {/* Floating orbs */}
-        <div data-orb className="absolute -top-24 left-[12%] size-[320px] rounded-full bg-emerald-500/25 blur-[120px]" />
-        <div data-orb className="absolute top-1/3 right-[8%] size-[260px] rounded-full bg-teal-400/20 blur-[110px]" />
-        <div data-orb className="absolute bottom-[-60px] left-[30%] size-[300px] rounded-full bg-emerald-600/15 blur-[130px]" />
-      </div>
-
-      <div className="relative w-full max-w-md space-y-7">
-        {/* Brand header */}
-        <div data-animate="header" className="text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3.5 py-1.5 backdrop-blur">
-            <Sparkles className="size-3.5 text-emerald-300" />
-            <span className="text-[10px] font-semibold uppercase tracking-[0.32em] text-emerald-300">
-              Finna · Financial Copilot
-            </span>
-          </div>
-          <h1 className="mt-5 bg-gradient-to-b from-white via-white to-white/60 bg-clip-text text-4xl font-semibold tracking-tight text-transparent sm:text-5xl">
-            {headline}
-          </h1>
-          <p className="mx-auto mt-3 max-w-sm text-sm text-white/55">{subcopy}</p>
-        </div>
-
-        {/* Card with gradient border */}
-        <div
-          data-animate="card"
-          className="group relative rounded-3xl p-[1px] transition-transform duration-300 hover:-translate-y-0.5"
+          className="absolute inset-0 opacity-[0.35]"
           style={{
             background:
-              "linear-gradient(140deg, rgba(16,185,129,0.55), rgba(16,185,129,0.08) 35%, rgba(45,212,191,0.35) 70%, rgba(16,185,129,0.5))",
+              "radial-gradient(ellipse 800px 500px at 20% -10%, rgba(16,185,129,0.15), transparent 60%), radial-gradient(ellipse 700px 400px at 85% 110%, rgba(20,184,166,0.10), transparent 55%)",
           }}
+        />
+        <div
+          className="absolute inset-0 opacity-[0.04]"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(255,255,255,0.9) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.9) 1px, transparent 1px)",
+            backgroundSize: "56px 56px",
+            maskImage: "radial-gradient(ellipse at center, black 20%, transparent 70%)",
+            WebkitMaskImage: "radial-gradient(ellipse at center, black 20%, transparent 70%)",
+          }}
+        />
+      </div>
+
+      <div className="relative w-full max-w-[420px]">
+        {/* Brand */}
+        <div data-animate="brand" className="mb-7 flex justify-center">
+          <div className="inline-flex items-center gap-2.5 rounded-full border border-white/8 bg-white/[0.03] px-3.5 py-1.5 backdrop-blur">
+            <span className="relative flex size-2">
+              <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-60" />
+              <span className="relative inline-flex size-2 rounded-full bg-emerald-400" />
+            </span>
+            <span className="text-[10px] font-semibold uppercase tracking-[0.28em] text-white/70">
+              Finna
+            </span>
+            <span className="h-3 w-px bg-white/15" />
+            <span className="text-[10px] font-medium uppercase tracking-[0.22em] text-white/45">
+              Financial Copilot
+            </span>
+          </div>
+        </div>
+
+        {/* Headline */}
+        <h1
+          data-animate="headline"
+          className="text-center text-4xl font-semibold tracking-tight text-white sm:text-[44px] sm:leading-[1.05]"
         >
-          <div className="rounded-3xl bg-[#060b0a]/95 p-6 backdrop-blur-xl sm:p-7">
-            {/* Mode tabs */}
-            <div className="relative mb-6 grid grid-cols-2 rounded-xl border border-white/5 bg-white/[0.03] p-1">
-              <div
-                className="absolute inset-y-1 w-1/2 rounded-lg bg-gradient-to-r from-emerald-500/90 to-teal-500/90 shadow-[0_10px_30px_-12px_rgba(16,185,129,0.6)] transition-transform duration-500 ease-[cubic-bezier(0.65,0,0.35,1)]"
-                style={{ transform: mode === "login" ? "translateX(0%)" : "translateX(100%)" }}
+          {isLogin ? "Welcome back" : "Get started"}
+        </h1>
+        <p data-animate="sub" className="mx-auto mt-3 max-w-[340px] text-center text-[14px] leading-relaxed text-white/50">
+          {isLogin
+            ? "Sign in to see your snapshot, goals and next-best actions."
+            : "A minute of setup, then honest numbers — no fluff, no ML guesswork."}
+        </p>
+
+        {/* Card */}
+        <div
+          ref={cardRef}
+          data-animate="card"
+          className="mt-8 rounded-2xl border border-white/[0.08] bg-[#0a0d0c]/80 p-6 shadow-[0_30px_80px_-40px_rgba(0,0,0,0.9)] backdrop-blur-xl sm:p-7"
+        >
+          {/* Google */}
+          <button
+            type="button"
+            onClick={handleGoogleSignIn}
+            disabled={Boolean(supabaseConfigError)}
+            className="group/g relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-[14px] font-medium text-white transition-all hover:border-white/20 hover:bg-white/[0.06] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <GoogleIcon />
+            <span>{supabaseConfigError ? "Google sign-in unavailable" : "Continue with Google"}</span>
+            <span className="pointer-events-none absolute inset-y-0 left-0 w-1/3 -translate-x-full bg-gradient-to-r from-transparent via-white/[0.08] to-transparent transition-transform duration-700 group-hover/g:translate-x-[300%]" />
+          </button>
+
+          {supabaseConfigError && (
+            <div className="mt-3 rounded-lg border border-amber-500/25 bg-amber-500/[0.08] px-3.5 py-2 text-[12px] text-amber-200/90">
+              {supabaseConfigError}
+            </div>
+          )}
+
+          {/* Divider */}
+          <div className="my-6 flex items-center gap-3">
+            <div className="h-px flex-1 bg-white/[0.08]" />
+            <span className="text-[10px] font-medium uppercase tracking-[0.24em] text-white/35">
+              or continue with email
+            </span>
+            <div className="h-px flex-1 bg-white/[0.08]" />
+          </div>
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div ref={fieldsRef} className="space-y-4">
+              {!isLogin && (
+                <Field
+                  key="name"
+                  id="name"
+                  icon={User2}
+                  label="Full name"
+                  type="text"
+                  value={name}
+                  onChange={setName}
+                  placeholder="Your name"
+                  required
+                />
+              )}
+
+              <Field
+                key="email"
+                id="email"
+                icon={Mail}
+                label="Email"
+                type="email"
+                value={email}
+                onChange={setEmail}
+                placeholder="you@example.com"
+                required
               />
-              <button
-                type="button"
-                onClick={() => { setMode("login"); setError(""); }}
-                className={`relative z-10 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-                  mode === "login" ? "text-white" : "text-white/50 hover:text-white/80"
-                }`}
-              >
-                Sign in
-              </button>
-              <button
-                type="button"
-                onClick={() => { setMode("register"); setError(""); }}
-                className={`relative z-10 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-                  mode === "register" ? "text-white" : "text-white/50 hover:text-white/80"
-                }`}
-              >
-                Create account
-              </button>
+
+              <Field
+                key="password"
+                id="password"
+                icon={Lock}
+                label="Password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={setPassword}
+                placeholder="Min 8 characters"
+                minLength={8}
+                required
+                rightSlot={
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="text-white/35 transition-colors hover:text-emerald-300"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  </button>
+                }
+              />
             </div>
 
-            {/* Google */}
-            <button
-              type="button"
-              onClick={handleGoogleSignIn}
-              disabled={Boolean(supabaseConfigError)}
-              className="group/btn relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-medium text-white transition-all hover:border-white/20 hover:bg-white/[0.08] disabled:opacity-50"
-            >
-              <GoogleIcon />
-              <span>{supabaseConfigError ? "Google sign-in unavailable" : "Continue with Google"}</span>
-              <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-700 group-hover/btn:translate-x-full" />
-            </button>
-
-            {supabaseConfigError && (
-              <div className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-xs text-amber-200">
-                {supabaseConfigError}
+            {error && (
+              <div
+                data-field
+                className="rounded-lg border border-red-500/25 bg-red-500/[0.08] px-3.5 py-2 text-[13px] text-red-300"
+              >
+                {error}
               </div>
             )}
 
-            <div className="my-6 flex items-center gap-4">
-              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/10 to-white/10" />
-              <span className="text-[10px] font-semibold uppercase tracking-[0.3em] text-white/35">
-                or with email
-              </span>
-              <div className="h-px flex-1 bg-gradient-to-l from-transparent via-white/10 to-white/10" />
-            </div>
-
-            {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div ref={formBoxRef} className="space-y-4">
-                {mode === "register" && (
-                  <Field
-                    key="name"
-                    id="name"
-                    icon={User2}
-                    label="Full name"
-                    type="text"
-                    value={name}
-                    onChange={setName}
-                    placeholder="Your name"
-                    required
-                  />
+            <button
+              type="submit"
+              disabled={loading}
+              className="group/s relative mt-1 flex h-11 w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-white px-5 text-[14px] font-semibold text-black transition-all hover:bg-white/95 disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              <span className="relative z-10 flex items-center gap-2">
+                {loading ? (
+                  <>
+                    <Sparkles className="size-4 animate-pulse" />
+                    Signing you in…
+                  </>
+                ) : (
+                  <>
+                    {isLogin ? "Sign in with email" : "Create account"}
+                    <ArrowRight className="size-4 transition-transform duration-300 group-hover/s:translate-x-1" />
+                  </>
                 )}
+              </span>
+            </button>
 
-                <Field
-                  key="email"
-                  id="email"
-                  icon={Mail}
-                  label="Email"
-                  type="email"
-                  value={email}
-                  onChange={setEmail}
-                  placeholder="you@example.com"
-                  required
-                />
-
-                <Field
-                  key="password"
-                  id="password"
-                  icon={Lock}
-                  label="Password"
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={setPassword}
-                  placeholder="Min 8 characters"
-                  minLength={8}
-                  required
-                  rightSlot={
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((v) => !v)}
-                      className="text-white/40 transition-colors hover:text-emerald-300"
-                      aria-label={showPassword ? "Hide password" : "Show password"}
-                    >
-                      {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                    </button>
-                  }
-                />
-              </div>
-
-              {error && (
-                <div
-                  data-field
-                  className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm text-red-300"
-                >
-                  {error}
-                </div>
-              )}
-
+            <p className="pt-1 text-center text-[13px] text-white/50">
+              {isLogin ? "New to Finna? " : "Already have an account? "}
               <button
-                type="submit"
-                disabled={loading}
-                className="group/submit relative mt-2 flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-5 text-sm font-semibold text-[#04110c] shadow-[0_18px_40px_-18px_rgba(16,185,129,0.7)] transition-all hover:shadow-[0_22px_50px_-18px_rgba(16,185,129,0.9)] disabled:opacity-70"
+                type="button"
+                onClick={() => { setMode(isLogin ? "register" : "login"); setError(""); }}
+                className="font-medium text-emerald-300 underline-offset-4 transition-colors hover:text-emerald-200 hover:underline"
               >
-                <span className="relative z-10 flex items-center gap-2">
-                  {loading
-                    ? "Processing…"
-                    : mode === "login"
-                      ? "Sign in with email"
-                      : "Create account"}
-                  {!loading && (
-                    <ArrowRight className="size-4 transition-transform duration-300 group-hover/submit:translate-x-1" />
-                  )}
-                </span>
-                <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent transition-transform duration-700 group-hover/submit:translate-x-full" />
+                {isLogin ? "Create an account" : "Sign in"}
               </button>
-            </form>
-          </div>
+            </p>
+          </form>
         </div>
 
-        {/* Pipeline info */}
+        {/* Footer strip */}
         <div
-          data-animate="info"
-          className="rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/10 via-transparent to-teal-500/5 p-4 text-center backdrop-blur"
+          data-animate="foot"
+          className="mt-6 flex flex-col items-center gap-2 text-center"
         >
-          <div className="flex items-center justify-center gap-2 text-[10px] font-semibold uppercase tracking-[0.28em] text-emerald-300">
-            <Sparkles className="size-3.5" />
-            Rule-based pipeline · no ML model
+          <div className="flex items-center gap-2 text-[11px] text-white/40">
+            <Shield className="size-3.5" />
+            <span>End-to-end private · your data stays in your account</span>
           </div>
-          <p className="mt-2 text-xs leading-relaxed text-white/55">
-            Expense · Debt · Risk · Goal · Investment · Orchestrator — deterministic scoring on your own numbers.
-          </p>
-        </div>
-
-        <div
-          data-animate="footer"
-          className="flex items-center justify-center gap-2 text-[11px] text-white/45"
-        >
-          <Shield className="size-3.5" />
-          <span>End-to-end private. Your financial data stays in your account.</span>
+          <div className="text-[10px] font-medium uppercase tracking-[0.22em] text-white/25">
+            Rule-based pipeline · no ML guesswork
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-/* ---------- Field primitive ---------- */
+/* ---------- Field ---------- */
 
 function Field({
   id,
@@ -366,12 +342,12 @@ function Field({
     <div data-field className="space-y-1.5">
       <label
         htmlFor={id}
-        className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45"
+        className="block text-[11px] font-medium text-white/55"
       >
         {label}
       </label>
-      <div className="group/field relative flex h-12 items-center overflow-hidden rounded-xl border border-white/[0.07] bg-white/[0.03] transition-all focus-within:border-emerald-400/50 focus-within:bg-white/[0.05] focus-within:shadow-[0_0_0_4px_rgba(16,185,129,0.08)]">
-        <div className="flex size-11 shrink-0 items-center justify-center text-white/30 transition-colors group-focus-within/field:text-emerald-300">
+      <div className="group/f relative flex h-11 items-center overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.02] transition-all focus-within:border-emerald-400/40 focus-within:bg-white/[0.04] focus-within:shadow-[0_0_0_3px_rgba(16,185,129,0.08)]">
+        <div className="flex size-10 shrink-0 items-center justify-center text-white/30 transition-colors group-focus-within/f:text-emerald-300">
           <Icon className="size-4" />
         </div>
         <input
@@ -382,7 +358,7 @@ function Field({
           placeholder={placeholder}
           required={required}
           minLength={minLength}
-          className="h-full w-full bg-transparent pr-3 text-sm text-white outline-none placeholder:text-white/25"
+          className="h-full w-full bg-transparent pr-3 text-[14px] text-white outline-none placeholder:text-white/25"
         />
         {rightSlot && <div className="pr-3">{rightSlot}</div>}
       </div>
