@@ -372,82 +372,110 @@ export function generateAgentTraces(data: OnboardingSnapshot): AgentTrace[] {
 
   traces.push({
     agent: "Expense",
-    observation: `Scanned ${Object.keys(e).length} expense categories totalling ₹${m.expenses.toLocaleString("en-IN")}.`,
-    analysis: `Expense/income ratio = ${(m.expenseRatio * 100).toFixed(0)}%. Top category ${topCategory(e) ?? "—"}.`,
-    output: m.expenseRatio > 0.7 ? "flagged expense pressure" : "expenses within sustainable band",
+    observation: `Looked at ${Object.keys(e).length} spending categories adding up to ₹${m.expenses.toLocaleString("en-IN")}.`,
+    analysis: `You spend ${(m.expenseRatio * 100).toFixed(0)}% of what you earn. Biggest chunk: ${topCategory(e) ?? "—"}.`,
+    output: m.expenseRatio > 0.7 ? "Your spending is a bit high" : "Spending looks okay",
     signals: [
-      { label: "expense/income", value: `${(m.expenseRatio * 100).toFixed(0)}%` },
+      { label: "spent vs earned", value: `${(m.expenseRatio * 100).toFixed(0)}%` },
       { label: "top category", value: topCategory(e) ?? "n/a" },
-      { label: "sub-score", value: `${b.subScores.expense}/100` },
+      { label: "spending score", value: `${b.subScores.expense}/100` },
     ],
   });
 
   traces.push({
     agent: "Debt",
-    observation: `Reviewed ${data.loans.length} loan entr${data.loans.length === 1 ? "y" : "ies"} (₹${m.debt.toLocaleString("en-IN")} outstanding).`,
-    analysis: `EMI burden = ${(m.debtServiceRatio * 100).toFixed(0)}% of income; debt-to-income = ${m.debtToIncomeYears.toFixed(2)} years.`,
-    output: m.debtServiceRatio > 0.5 ? "critical: EMI overload" : m.debtServiceRatio > 0.3 ? "stretched: accelerate payoff" : "healthy EMI load",
+    observation:
+      data.loans.length === 0
+        ? "No loans on your profile — nothing to pay off."
+        : `Checked ${data.loans.length} loan${data.loans.length === 1 ? "" : "s"} totalling ₹${m.debt.toLocaleString("en-IN")}.`,
+    analysis:
+      data.loans.length === 0
+        ? "No EMIs eating into your income."
+        : `EMIs take ${(m.debtServiceRatio * 100).toFixed(0)}% of your income and total debt is ${m.debtToIncomeYears.toFixed(2)} years of earnings.`,
+    output:
+      data.loans.length === 0
+        ? "Debt-free — keep it that way"
+        : m.debtServiceRatio > 0.5
+          ? "EMIs are too high — consider refinancing"
+          : m.debtServiceRatio > 0.3
+            ? "EMIs are okay, but try to pay off faster"
+            : "EMIs are light",
     signals: [
-      { label: "emi/income", value: `${(m.debtServiceRatio * 100).toFixed(0)}%` },
-      { label: "debt years", value: m.debtToIncomeYears.toFixed(2) },
-      { label: "sub-score", value: `${b.subScores.debt}/100` },
+      { label: "emi vs income", value: `${(m.debtServiceRatio * 100).toFixed(0)}%` },
+      { label: "debt in years of income", value: m.debtToIncomeYears.toFixed(2) },
+      { label: "debt score", value: `${b.subScores.debt}/100` },
     ],
   });
 
   traces.push({
     agent: "Risk",
-    observation: `Computed liquidity cushion from savings and debt exposure.`,
-    analysis: `Savings rate = ${(m.savingsRatio * 100).toFixed(0)}%, liquidity sub-score = ${b.subScores.liquidity}/100.`,
-    output: m.savingsRatio < 0.1 ? "high financial fragility" : m.savingsRatio < 0.2 ? "below safety buffer" : "resilient cushion",
+    observation: `Looked at how much cushion you have if income stops.`,
+    analysis: `You save ${(m.savingsRatio * 100).toFixed(0)}% of your income. Safety score ${b.subScores.liquidity}/100.`,
+    output:
+      m.savingsRatio < 0.1
+        ? "Low safety net — build emergency savings"
+        : m.savingsRatio < 0.2
+          ? "Below ideal safety buffer"
+          : "Safety net looks good",
     signals: [
       { label: "savings rate", value: `${(m.savingsRatio * 100).toFixed(0)}%` },
-      { label: "risk level", value: b.riskLevel },
-      { label: "percentile", value: `${b.percentileVsPeers}th` },
+      { label: "overall risk", value: b.riskLevel.replace("_", " ") },
+      { label: "vs peers", value: `${b.percentileVsPeers}th percentile` },
     ],
   });
 
   const topGoal = data.goals[0];
-  const goalProb = topGoal ? calculateGoalProbability(topGoal, m.savings) : null;
+  const goalProb = topGoal && topGoal.targetAmount > 0 && topGoal.years > 0
+    ? calculateGoalProbability(topGoal, m.savings)
+    : null;
+  const goalNeeded = topGoal && topGoal.years > 0 ? Math.ceil(topGoal.targetAmount / (topGoal.years * 12)) : 0;
   traces.push({
     agent: "Goal",
     observation: topGoal
-      ? `Modelled "${topGoal.name ?? topGoal.type}" — target ₹${topGoal.targetAmount.toLocaleString("en-IN")} in ${topGoal.years}y.`
-      : "No active goals defined.",
+      ? `Checked your "${topGoal.name ?? topGoal.type}" — need ₹${topGoal.targetAmount.toLocaleString("en-IN")} in ${topGoal.years} year${topGoal.years === 1 ? "" : "s"}.`
+      : "No goals added yet.",
     analysis: topGoal
-      ? `At ₹${m.savings.toLocaleString("en-IN")}/mo savings, projection = ₹${(m.savings * topGoal.years * 12).toLocaleString("en-IN")}.`
-      : "Add a goal to enable projections.",
-    output: goalProb !== null ? `success probability ${goalProb}%` : "awaiting input",
+      ? `You'd need to save ₹${goalNeeded.toLocaleString("en-IN")}/mo. Right now you save ₹${m.savings.toLocaleString("en-IN")}/mo.`
+      : "Add a goal so we can show you how close you are.",
+    output:
+      goalProb === null
+        ? "Waiting for a goal"
+        : goalProb >= 80
+          ? `On track — about ${goalProb}% chance`
+          : goalProb >= 40
+            ? `Stretch goal — about ${goalProb}% chance`
+            : `Tough at current savings — about ${goalProb}% chance`,
     signals: [
-      { label: "goals", value: String(data.goals.length) },
-      { label: "top goal prob", value: goalProb !== null ? `${goalProb}%` : "—" },
+      { label: "goals added", value: String(data.goals.length) },
+      { label: "top goal chance", value: goalProb !== null ? `${goalProb}%` : "—" },
     ],
   });
 
   traces.push({
     agent: "Investment",
-    observation: `Estimated investable surplus after expenses + EMI.`,
-    analysis: `Surplus = ₹${m.savings.toLocaleString("en-IN")}/mo. Equity allocation candidate: ₹${Math.round(m.savings * 0.6).toLocaleString("en-IN")}/mo.`,
+    observation: `Worked out what's left over each month after bills and EMIs.`,
+    analysis: `You have ₹${m.savings.toLocaleString("en-IN")}/mo free. A balanced split would put ~₹${Math.round(m.savings * 0.6).toLocaleString("en-IN")}/mo into equity.`,
     output:
       m.savings <= 0
-        ? "no surplus — defer investing until savings > 0"
+        ? "No surplus yet — cut costs before investing"
         : m.savingsRatio < 0.2
-          ? "build emergency fund before equity SIP"
-          : "ready for diversified SIP + gold hedge",
+          ? "Build an emergency fund first, then start a SIP"
+          : "Ready for a mutual-fund SIP plus a little gold",
     signals: [
-      { label: "surplus", value: `₹${m.savings.toLocaleString("en-IN")}/mo` },
-      { label: "equity band", value: `₹${Math.round(Math.max(0, m.savings * 0.6)).toLocaleString("en-IN")}/mo` },
+      { label: "free cash", value: `₹${m.savings.toLocaleString("en-IN")}/mo` },
+      { label: "equity share", value: `₹${Math.round(Math.max(0, m.savings * 0.6)).toLocaleString("en-IN")}/mo` },
     ],
   });
 
   traces.push({
     agent: "Orchestrator",
-    observation: `Fused outputs from 5 agents into a weighted score.`,
-    analysis: `Weights savings×${b.weights.savings} + debt×${b.weights.debt} + expense×${b.weights.expense} + liquidity×${b.weights.liquidity}.`,
-    output: `health score = ${b.overall}/100 · ${b.riskLevel.replace("_", " ")}`,
+    observation: `Combined the five checks above into one final score.`,
+    analysis: `Savings counts ${Math.round(b.weights.savings * 100)}%, expenses ${Math.round(b.weights.expense * 100)}%, debt ${Math.round(b.weights.debt * 100)}%, safety net ${Math.round(b.weights.liquidity * 100)}%.`,
+    output: `Final score ${b.overall}/100 · ${b.riskLevel.replace("_", " ")}`,
     signals: [
       { label: "overall", value: `${b.overall}/100` },
-      { label: "risk", value: b.riskLevel },
-      { label: "peer percentile", value: `${b.percentileVsPeers}th` },
+      { label: "risk", value: b.riskLevel.replace("_", " ") },
+      { label: "vs peers", value: `${b.percentileVsPeers}th percentile` },
     ],
   });
 

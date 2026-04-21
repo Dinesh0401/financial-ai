@@ -12,6 +12,8 @@ def _metrics_summary(ctx: AgentContext) -> str:
     """Build a compact text summary of the user's financial metrics for prompts."""
     m = ctx.metrics or {}
     profile = ctx.profile or {}
+    largest_category = str(m.get("largest_category", "unknown") or "unknown")
+    category_breakdown = m.get("category_breakdown", {}) or {}
     lines = [
         f"Total income: Rs {m.get('total_income', 0):,.0f}",
         f"Total expenses: Rs {m.get('total_expenses', 0):,.0f}",
@@ -21,14 +23,18 @@ def _metrics_summary(ctx: AgentContext) -> str:
         f"Emergency fund: {m.get('emergency_fund_months', 0):.1f} months",
         f"Investment rate: {m.get('investment_rate', 0) * 100:.1f}%",
         f"Discretionary ratio: {m.get('discretionary_ratio', 0) * 100:.1f}%",
-        f"Largest spending category: {m.get('largest_category', 'unknown')}",
         f"Recurring expense ratio: {m.get('recurring_ratio', 0) * 100:.1f}%",
     ]
+    if category_breakdown and largest_category not in {"uncategorized", "unknown"}:
+        lines.append(f"Largest spending category: {largest_category}")
+    elif category_breakdown:
+        lines.append("Largest spending category: pending classification")
+    else:
+        lines.append("Largest spending category: unavailable (no categorized debit data)")
     if profile.get("monthly_income"):
         lines.append(f"Profile monthly income: Rs {float(profile['monthly_income']):,.0f}")
     if profile.get("tax_regime"):
         lines.append(f"Tax regime: {profile['tax_regime']}")
-    category_breakdown = m.get("category_breakdown", {})
     if category_breakdown:
         top_cats = sorted(category_breakdown.items(), key=lambda x: x[1], reverse=True)[:6]
         lines.append("Top categories: " + ", ".join(f"{k}: Rs {v:,.0f}" for k, v in top_cats))
@@ -104,19 +110,34 @@ class ExpenseAgent(BaseAgent):
         risk_alerts = []
 
         # Rule-based findings (always present)
-        largest = metrics.get("largest_category", "uncategorized")
+        largest = str(metrics.get("largest_category", "unknown") or "unknown")
         disc_ratio = float(metrics.get("discretionary_ratio", 0))
         expense_ratio = float(metrics.get("expense_ratio", 0))
         total_income = float(metrics.get("total_income", 0))
         total_expenses = float(metrics.get("total_expenses", 0))
+        category_breakdown = metrics.get("category_breakdown", {}) or {}
 
-        findings.append({"title": "Largest spending category", "detail": f"The biggest debit category is {largest.replace('_', ' ')}."})
+        if not category_breakdown and total_expenses <= 0:
+            findings.append({
+                "title": "Spending history not available",
+                "detail": "No categorized debit transactions found yet, so category-level spending insights are limited.",
+            })
+        elif largest in {"uncategorized", "unknown"}:
+            findings.append({
+                "title": "Spending classification in progress",
+                "detail": "We detected debit spending, but category labels are still sparse. Upload or sync more transactions for sharper category insights.",
+            })
+        else:
+            findings.append({
+                "title": "Largest spending category",
+                "detail": f"The biggest debit category is {largest.replace('_', ' ')}.",
+            })
+
         if disc_ratio > 0.25:
             findings.append({"title": "Discretionary pressure", "detail": f"Discretionary outflows account for {disc_ratio * 100:.1f}% of total expenses. Consider capping non-essential spending."})
         if expense_ratio > 0.7:
             findings.append({"title": "High expense ratio", "detail": f"Expenses consume {expense_ratio * 100:.1f}% of income (Rs {total_expenses:,.0f} of Rs {total_income:,.0f}). Target keeping this below 70%."})
 
-        category_breakdown = metrics.get("category_breakdown", {})
         if category_breakdown:
             top_cats = sorted(category_breakdown.items(), key=lambda x: x[1], reverse=True)[:3]
             detail = ", ".join(f"{k.replace('_', ' ')} Rs {v:,.0f}" for k, v in top_cats)
@@ -174,14 +195,36 @@ class DebtAgent(BaseAgent):
         recommendations = []
         risk_alerts = []
 
+        if debt_ratio <= 0:
+            findings.append(
+                {
+                    "title": "Debt-free status",
+                    "detail": "No active loan or EMI outflows were detected in your recent data.",
+                }
+            )
+            recommendations.append(
+                {
+                    "title": "Redirect EMI capacity to wealth goals",
+                    "description": "Since there is no active loan to pay off, channel that cash flow into your emergency fund and SIP contributions.",
+                    "potential_saving": 0,
+                }
+            )
+
+            return await self._result(
+                started_at=started_at,
+                findings=findings,
+                recommendations=recommendations,
+                risk_alerts=risk_alerts,
+                confidence=0.9,
+                reasoning="No debt signals detected in recent data; returned debt-free guidance and next best actions.",
+            )
+
         if debt_ratio > 0.40:
             findings.append({"title": "Critical debt load", "detail": f"Debt-to-income above 40% is dangerous territory. Monthly debt burden is approximately Rs {total_income * debt_ratio:,.0f}."})
             recommendations.append({"title": "Aggressive debt reduction", "description": "Prioritize highest-interest debt first (avalanche method). Avoid new EMIs until ratio drops below 30%.", "potential_saving": 0})
         elif debt_ratio > 0.30:
             findings.append({"title": "Elevated debt pressure", "detail": f"At {debt_ratio * 100:.1f}%, debt service is compressing your financial flexibility. Target under 30%."})
             recommendations.append({"title": "Rebalance debt service", "description": "Focus surplus towards the costliest EMI. Consider part-prepayment to reduce interest burden.", "potential_saving": 0})
-        elif debt_ratio == 0:
-            findings.append({"title": "Debt-free status", "detail": "No debt obligations detected. This frees up capacity for investments and goals."})
 
         if self.gemini and self.gemini.available:
             ai = await _gemini_analyze(

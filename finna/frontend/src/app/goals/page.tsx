@@ -28,6 +28,7 @@ const GOAL_TYPES = [
   { value: "investment", label: "Investment" },
   { value: "debt_payoff", label: "Debt Payoff" },
   { value: "custom", label: "Custom" },
+  { value: "other", label: "Other" },
 ];
 
 type NewGoalForm = {

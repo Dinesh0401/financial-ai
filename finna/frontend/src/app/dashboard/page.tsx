@@ -19,6 +19,13 @@ import { Label } from "@/components/ui/label";
 import { getCurrentUser, getDashboardData, getHealthScore, updateCurrentUser } from "@/lib/api";
 import { isAuthenticated } from "@/lib/auth";
 import type { DashboardData, HealthScoreData, UserProfile } from "@/lib/types";
+import {
+  calculateHealthBreakdown,
+  fetchOnboardingSnapshot,
+  totalEmi,
+  totalExpenses,
+  type OnboardingSnapshot,
+} from "@/lib/ai/engine";
 
 gsap.registerPlugin(useGSAP);
 
@@ -26,6 +33,7 @@ type DashboardState = {
   dashboard: DashboardData | null;
   health: HealthScoreData | null;
   profile: UserProfile | null;
+  snapshot: OnboardingSnapshot | null;
   loading: boolean;
   saving: boolean;
   error: string | null;
@@ -37,6 +45,7 @@ const EMPTY_STATE: DashboardState = {
   dashboard: null,
   health: null,
   profile: null,
+  snapshot: null,
   loading: true,
   saving: false,
   error: null,
@@ -107,10 +116,11 @@ export default function DashboardPage() {
 
     async function load() {
       try {
-        const [dashboard, health, profile] = await Promise.all([
+        const [dashboard, health, profile, snapshot] = await Promise.all([
           getDashboardData(),
           getHealthScore(),
           getCurrentUser(),
+          fetchOnboardingSnapshot().catch(() => null),
         ]);
 
         if (cancelled) return;
@@ -124,6 +134,7 @@ export default function DashboardPage() {
           dashboard,
           health,
           profile,
+          snapshot,
           loading: false,
           saving: false,
           error: null,
@@ -221,12 +232,24 @@ export default function DashboardPage() {
   const dashboard = state.dashboard;
   const health = state.health;
   const profile = state.profile;
-  const liveLabel = profile.onboarding_done ? "Live snapshot synced" : "Live data connected · onboarding incomplete";
+  const snapshot = state.snapshot;
+  const liveLabel = profile.onboarding_done ? "Your data is saved" : "Finish setup to see everything";
 
-  const incomeAmt = dashboard.monthly_overview.income;
-  const expenseAmt = dashboard.monthly_overview.expenses;
-  const savingsAmt = dashboard.monthly_overview.savings;
+  const snapshotHealth = snapshot ? calculateHealthBreakdown(snapshot) : null;
+  const hasSnapshot = snapshot !== null && snapshot.income > 0;
+
+  const incomeAmt = hasSnapshot ? snapshot!.income : dashboard.monthly_overview.income;
+  const expenseAmt = hasSnapshot
+    ? totalExpenses(snapshot!.expenses) + totalEmi(snapshot!.loans)
+    : dashboard.monthly_overview.expenses;
+  const savingsAmt = hasSnapshot
+    ? Math.max(0, incomeAmt - expenseAmt)
+    : dashboard.monthly_overview.savings;
   const savingsPct = incomeAmt > 0 ? Math.round((savingsAmt / incomeAmt) * 100) : 0;
+  const healthScore = snapshotHealth ? snapshotHealth.overall : health.score;
+  const spendingBreakdown = hasSnapshot
+    ? { ...snapshot!.expenses, ...(totalEmi(snapshot!.loans) > 0 ? { emi_loan: totalEmi(snapshot!.loans) } : {}) }
+    : dashboard.spending_breakdown;
   const firstName = profile.name?.split(" ")[0] ?? null;
 
   return (
@@ -269,7 +292,7 @@ export default function DashboardPage() {
                   )}
                 </h2>
                 <p className="mt-3 max-w-2xl text-sm leading-7 text-muted-foreground">
-                  Authenticated snapshot from your onboarding data — no mock values. Scroll for the full diagnostic breakdown.
+                  This is the income, spends and loans you entered during setup. Scroll down for a full picture and simple tips.
                 </p>
                 <div className="mt-6 grid gap-3 sm:grid-cols-3">
                   <div className="rounded-2xl border border-border/50 bg-background/40 p-3">
@@ -307,7 +330,7 @@ export default function DashboardPage() {
                 )}
               </div>
               <div data-animate="gauge" className="flex min-h-[220px] items-center justify-center xl:justify-end">
-                <HealthGauge score={health.score} />
+                <HealthGauge score={healthScore} />
               </div>
             </CardContent>
           </Card>
@@ -339,6 +362,11 @@ export default function DashboardPage() {
               </div>
               <div className="space-y-2">
                 <Label>Tax regime</Label>
+                <p className="text-[11px] leading-5 text-muted-foreground">
+                  India has two tax systems. <span className="text-foreground">New regime</span> uses lower slab rates but most
+                  deductions (80C, HRA, insurance) are not allowed. <span className="text-foreground">Old regime</span> has
+                  higher slabs but lets you claim those deductions. Pick the one your employer uses for TDS.
+                </p>
                 <div className="grid grid-cols-2 gap-2">
                   {(["new", "old"] as const).map((option) => (
                     <button
@@ -393,8 +421,8 @@ export default function DashboardPage() {
             <CardTitle className="mt-1 text-lg">Where your money flows</CardTitle>
           </CardHeader>
           <CardContent>
-            {Object.keys(dashboard.spending_breakdown).length > 0 ? (
-              <SpendingBreakdown data={dashboard.spending_breakdown} />
+            {Object.keys(spendingBreakdown).length > 0 ? (
+              <SpendingBreakdown data={spendingBreakdown} />
             ) : (
               <div className="rounded-3xl border border-dashed border-border/60 bg-background/25 p-8 text-center text-sm text-muted-foreground">
                 No spending categories yet — add them in onboarding.
@@ -405,10 +433,10 @@ export default function DashboardPage() {
 
         <AIInsights
           fallback={{
-            income: dashboard.monthly_overview.income,
-            expenses: dashboard.monthly_overview.expenses,
-            savings: dashboard.monthly_overview.savings,
-            categoryTotals: dashboard.spending_breakdown,
+            income: incomeAmt,
+            expenses: expenseAmt,
+            savings: savingsAmt,
+            categoryTotals: spendingBreakdown,
           }}
         />
       </div>

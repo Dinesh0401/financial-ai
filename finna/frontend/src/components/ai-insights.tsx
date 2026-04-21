@@ -125,6 +125,7 @@ function snapshotFromFallback(f: NonNullable<Props["fallback"]>): OnboardingSnap
 export function AIInsights({ fallback }: Props) {
   const [snapshot, setSnapshot] = useState<OnboardingSnapshot | null>(null);
   const [hydrated, setHydrated] = useState(false);
+  const [showAgents, setShowAgents] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -178,7 +179,9 @@ export function AIInsights({ fallback }: Props) {
   const lastUpdated = relativeTime(data.savedAt);
 
   const topGoal = data.goals[0];
-  const goalProb = topGoal ? calculateGoalProbability(topGoal, monthlySavings) : null;
+  const goalProb = topGoal && topGoal.targetAmount > 0 && topGoal.years > 0
+    ? calculateGoalProbability(topGoal, monthlySavings)
+    : null;
 
   const topLoan = data.loans[0];
   const loanOpt = topLoan ? optimizeLoan(topLoan) : null;
@@ -262,22 +265,36 @@ export function AIInsights({ fallback }: Props) {
         </div>
 
         <div className="rounded-3xl border border-border/60 bg-card/70 p-5">
-          <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Goal Success Probability</p>
-          {topGoal && goalProb !== null ? (
-            <>
-              <p className="mt-4 text-4xl font-bold text-foreground">{goalProb}%</p>
-              <p className="mt-2 text-xs text-muted-foreground">
-                for &quot;{topGoal.name ?? topGoal.type}&quot; · target ₹{topGoal.targetAmount.toLocaleString("en-IN")} in {topGoal.years}y
+          <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Goal success chance</p>
+          {topGoal ? (
+            goalProb !== null ? (
+              (() => {
+                const needed = Math.ceil(topGoal.targetAmount / (topGoal.years * 12));
+                const shortfall = Math.max(0, needed - monthlySavings);
+                return (
+                  <>
+                    <p className="mt-4 text-4xl font-bold text-foreground">{goalProb}%</p>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      for &quot;{topGoal.name ?? topGoal.type}&quot; · need ₹{topGoal.targetAmount.toLocaleString("en-IN")} in {topGoal.years} year{topGoal.years === 1 ? "" : "s"}
+                    </p>
+                    <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/5">
+                      <div className="h-full rounded-full bg-primary" style={{ width: `${goalProb}%` }} />
+                    </div>
+                    <p className="mt-3 text-[11px] text-muted-foreground">
+                      {shortfall > 0
+                        ? `Save ₹${needed.toLocaleString("en-IN")}/mo to hit it (you're short by ₹${shortfall.toLocaleString("en-IN")}/mo today).`
+                        : `You're on track — keep saving ₹${monthlySavings.toLocaleString("en-IN")}/mo.`}
+                    </p>
+                  </>
+                );
+              })()
+            ) : (
+              <p className="mt-6 text-sm text-muted-foreground">
+                Add a valid goal amount and timeline to see your success chance.
               </p>
-              <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/5">
-                <div className="h-full rounded-full bg-primary" style={{ width: `${goalProb}%` }} />
-              </div>
-              <p className="mt-3 text-[11px] text-muted-foreground">
-                At ₹{monthlySavings.toLocaleString("en-IN")}/mo you project ₹{(monthlySavings * topGoal.years * 12).toLocaleString("en-IN")}.
-              </p>
-            </>
+            )
           ) : (
-            <p className="mt-6 text-sm text-muted-foreground">Add a goal in onboarding to see a projected success rate.</p>
+            <p className="mt-6 text-sm text-muted-foreground">Add a goal in onboarding to see how close you are.</p>
           )}
         </div>
 
@@ -344,7 +361,7 @@ export function AIInsights({ fallback }: Props) {
             <p className="text-sm font-semibold">12-month savings forecast</p>
           </div>
           <span className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-            deterministic projection · ceteris paribus
+            assumes your spending stays the same
           </span>
         </div>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -420,12 +437,20 @@ export function AIInsights({ fallback }: Props) {
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <Brain className="size-4 text-primary" />
-            <p className="text-sm font-semibold">Agent reasoning trace</p>
+            <p className="text-sm font-semibold">How we figured this out</p>
           </div>
-          <span className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-            rule-based pipeline · no ML model
-          </span>
+          <button
+            type="button"
+            onClick={() => setShowAgents((v) => !v)}
+            className="rounded-full border border-border/60 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground transition hover:text-foreground"
+          >
+            {showAgents ? "Hide details" : "Show details"}
+          </button>
         </div>
+        <p className="mt-2 text-xs text-muted-foreground">
+          Six rule-based checks run on your numbers — savings, debt, risk, goals, investments, and a summary — with no AI guessing.
+        </p>
+        {showAgents && (
         <div className="mt-4 grid gap-3 lg:grid-cols-2">
           {traces.map((t) => {
             const Icon = AGENT_ICON[t.agent];
@@ -440,15 +465,15 @@ export function AIInsights({ fallback }: Props) {
                 </div>
                 <dl className="mt-3 space-y-1.5 text-xs">
                   <div>
-                    <dt className="inline font-semibold uppercase tracking-[0.18em] text-muted-foreground">Observe · </dt>
+                    <dt className="inline font-semibold uppercase tracking-[0.18em] text-muted-foreground">Checked · </dt>
                     <dd className="inline text-foreground">{t.observation}</dd>
                   </div>
                   <div>
-                    <dt className="inline font-semibold uppercase tracking-[0.18em] text-muted-foreground">Analyse · </dt>
+                    <dt className="inline font-semibold uppercase tracking-[0.18em] text-muted-foreground">Found · </dt>
                     <dd className="inline text-foreground">{t.analysis}</dd>
                   </div>
                   <div>
-                    <dt className="inline font-semibold uppercase tracking-[0.18em] text-primary">Output · </dt>
+                    <dt className="inline font-semibold uppercase tracking-[0.18em] text-primary">Takeaway · </dt>
                     <dd className="inline text-foreground">{t.output}</dd>
                   </div>
                 </dl>
@@ -468,6 +493,7 @@ export function AIInsights({ fallback }: Props) {
             );
           })}
         </div>
+        )}
       </div>
 
       <div className="rounded-3xl border border-border/60 bg-card/70 p-5">
@@ -490,9 +516,6 @@ export function AIInsights({ fallback }: Props) {
                     <span className="rounded-full border border-white/15 px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] opacity-80">
                       {r.agent}
                     </span>
-                    <span className="rounded-full border border-white/15 px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] opacity-80">
-                      priority {r.priority}
-                    </span>
                     {r.impactMonthly > 0 && (
                       <span className="rounded-full border border-emerald-400/40 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-300">
                         saves ₹{r.impactMonthly.toLocaleString("en-IN")}/mo
@@ -500,9 +523,6 @@ export function AIInsights({ fallback }: Props) {
                     )}
                   </div>
                   <p className="mt-1 text-xs leading-5 opacity-90">{r.detail}</p>
-                  <p className="mt-1 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-                    rule · {r.rationale}
-                  </p>
                 </div>
                 <SevIcon className="size-4 shrink-0 opacity-70" />
               </li>

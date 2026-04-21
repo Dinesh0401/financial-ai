@@ -45,6 +45,22 @@ def _is_investment_intent(message: str) -> bool:
     return any(keyword in lowered for keyword in keywords)
 
 
+def _is_loan_intent(message: str) -> bool:
+    lowered = message.lower()
+    keywords = (
+        "loan",
+        "debt",
+        "emi",
+        "payoff",
+        "pay off",
+        "prepay",
+        "avalanche",
+        "snowball",
+        "refinance",
+    )
+    return any(keyword in lowered for keyword in keywords)
+
+
 def _estimate_monthly_capacity(metrics: dict, profile: dict) -> tuple[float, float, float, bool]:
     monthly_trends = metrics.get("monthly_trends", {}) or {}
     month_count = max(1, len(monthly_trends) or 1)
@@ -149,6 +165,47 @@ def _build_investment_fallback(
     return "\n\n".join(sections)
 
 
+def _build_no_loan_debt_fallback(*, metrics: dict, profile: dict) -> str:
+    monthly_income, monthly_expenses, monthly_surplus, conservative_estimate = _estimate_monthly_capacity(
+        metrics,
+        profile,
+    )
+    suggested_redirect = max(0.0, monthly_surplus)
+    if suggested_redirect <= 0 and monthly_income > 0:
+        suggested_redirect = monthly_income * 0.05
+
+    lines = [
+        "I checked your latest data and there is no active loan or EMI outflow to optimize right now.",
+        "",
+        "**Current Snapshot**",
+    ]
+    if monthly_income > 0:
+        lines.append(f"- Monthly income considered: `{_format_rupees(monthly_income)}`")
+    if monthly_expenses > 0:
+        lines.append(f"- Monthly expenses considered: `{_format_rupees(monthly_expenses)}`")
+    lines.append(f"- Debt ratio detected: `{float(metrics.get('debt_ratio', 0) or 0) * 100:.1f}%`")
+
+    lines.extend(
+        [
+            "",
+            "**What To Do Instead**",
+            f"1. Redirect about `{_format_rupees(suggested_redirect)}` per month into emergency fund and SIPs (adjust as comfortable).",
+            "2. Keep debt at zero by avoiding new EMIs unless they are essential.",
+            "3. If you recently took a loan, sync fresh transactions and ask again for a payoff order.",
+        ]
+    )
+
+    if conservative_estimate:
+        lines.extend(
+            [
+                "",
+                "_Note: the monthly redirect number is conservative because complete recurring-expense history is not loaded yet._",
+            ]
+        )
+
+    return "\n".join(lines)
+
+
 class CopilotService:
     def __init__(self, orchestrator: OrchestratorAgent, gemini: GeminiService) -> None:
         self.orchestrator = orchestrator
@@ -251,6 +308,30 @@ class CopilotService:
             if r.get("description")
         )
 
+        debt_ratio = float(metrics_dict.get("debt_ratio", 0) or 0)
+        if _is_loan_intent(message) and debt_ratio <= 0:
+            final_message = _build_no_loan_debt_fallback(metrics=metrics_dict, profile=context.profile)
+            yield _sse("message", {"content": final_message})
+
+            session.add(ChatMessage(user_id=user.id, session_id=conversation_id, role="user", content=message))
+            session.add(
+                ChatMessage(
+                    user_id=user.id,
+                    session_id=conversation_id,
+                    role="assistant",
+                    content=final_message,
+                    agent_reasoning={"agents": [a["agent_name"] for a in orchestrated["agents"]], "findings_count": len(orchestrated["findings"])},
+                    tools_used=[agent["agent_name"] for agent in orchestrated["agents"]],
+                )
+            )
+            await session.flush()
+
+            yield _sse("done", {
+                "session_id": conversation_id,
+                "tools_used": [agent["agent_name"] for agent in orchestrated["agents"]],
+            })
+            return
+
         system_prompt = (
             "You are an India-first agentic AI financial copilot with 6 specialist agents. "
             "You have just run multiple specialist agents (expense, debt, goal, risk, investment, tax) "
@@ -258,6 +339,7 @@ class CopilotService:
             "conversational response. Be specific with numbers (use Rs). Be actionable. "
             "If the user asks about affordability or goals, give clear yes/no with reasoning. "
             "If the user asks for an investment plan, build it from income, surplus, debt, and emergency-fund capacity. "
+            "If debt ratio is 0 or there are no active EMI/loan outflows, explicitly say no active loan is detected and do not invent payoff order, lenders, or debt amounts. "
             "Do not recommend specific stocks, IPOs, or MTF trades unless live market data and suitability data are available. "
             "Explain that ETFs and diversified mutual funds are core instruments, while direct stocks are satellite ideas and MTF is not a passive-income tool. "
             "Keep it concise but thorough (2-4 paragraphs max).\n\n"
