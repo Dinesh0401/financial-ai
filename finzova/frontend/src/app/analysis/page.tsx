@@ -157,8 +157,8 @@ export default function AnalysisPage() {
     }
     list.push({
       icon: TrendingUp,
-      title: "Ask the AI Copilot for a custom plan",
-      why: "It sees your full picture and can answer specific questions about your goals, debt, and spending.",
+      title: "Ask Zoya for a custom plan",
+      why: "She sees your full picture and can answer specific questions about your goals, debt, and spending.",
       impact: "Personalised recommendations in seconds",
     });
     return list.slice(0, 4);
@@ -316,7 +316,7 @@ export default function AnalysisPage() {
               <Link href="/chat">
                 <Button variant="outline" size="sm">
                   <Sparkles className="mr-2 size-4" />
-                  Ask Copilot
+                  Ask Zoya
                 </Button>
               </Link>
             </div>

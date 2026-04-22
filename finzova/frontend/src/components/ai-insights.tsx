@@ -154,7 +154,7 @@ export function AIInsights({ fallback }: Props) {
       <section className="space-y-4">
         <div className="flex items-center gap-2">
           <Sparkles className="size-4 text-primary" />
-          <h2 className="text-sm font-semibold uppercase tracking-[0.24em] text-primary">AI Copilot Insights</h2>
+          <h2 className="text-sm font-semibold uppercase tracking-[0.24em] text-primary">Zoya&apos;s take</h2>
         </div>
         <div className="rounded-3xl border border-dashed border-border/60 bg-card/60 p-6 text-sm text-muted-foreground">
           Complete onboarding to unlock your personalised health score, goal forecast and agent recommendations.{" "}
@@ -202,7 +202,7 @@ export function AIInsights({ fallback }: Props) {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Sparkles className="size-4 text-primary" />
-          <h2 className="text-sm font-semibold uppercase tracking-[0.24em] text-primary">AI Copilot Insights</h2>
+          <h2 className="text-sm font-semibold uppercase tracking-[0.24em] text-primary">Zoya&apos;s take</h2>
         </div>
         {lastUpdated && (
           <span className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
@@ -323,7 +323,7 @@ export function AIInsights({ fallback }: Props) {
       <div className="rounded-3xl border border-primary/30 bg-gradient-to-br from-primary/10 via-card/80 to-card/60 p-5 shadow-[0_0_40px_-20px_rgba(16,185,129,0.5)]">
         <div className="flex items-center gap-2">
           <Sparkles className="size-4 text-primary" />
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary">AI Says</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary">Zoya says</p>
         </div>
         <p className="mt-3 text-base font-semibold text-foreground">{summary.headline}</p>
         <ul className="mt-4 grid gap-2 sm:grid-cols-2">

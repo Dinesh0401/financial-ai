@@ -17,7 +17,7 @@ const TOPICS: Topic[] = [
   {
     icon: BookOpen,
     title: "New here? Read the walkthrough",
-    body: "A 7-step guided tour covering sign-in, uploads, goals and the AI Copilot.",
+    body: "A 7-step guided tour covering sign-in, uploads, goals and asking Zoya.",
     href: "/guide",
   },
   {
@@ -27,7 +27,7 @@ const TOPICS: Topic[] = [
   },
   {
     icon: MessageCircleQuestion,
-    title: "Copilot says 'temporarily at capacity'",
+    title: "Zoya says 'temporarily at capacity'",
     body: "Our AI is rate-limited per minute. Wait ~30 seconds and ask again — one focused question at a time works best.",
   },
   {

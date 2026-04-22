@@ -1,9 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { Bot, ChevronRight, MessageSquareQuote, Sparkles, User2 } from "lucide-react";
+import { ChevronRight, MessageSquareQuote, Sparkles, User2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
+import { ZoyaAvatar } from "@/components/zoya-avatar";
 import { cn } from "@/lib/utils";
 
 export type ChatMessage = {
@@ -283,20 +284,15 @@ export function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
   return (
     <article className="max-w-[96%] overflow-hidden rounded-[30px] border border-border/60 bg-card/90 shadow-[0_20px_50px_-35px_rgba(0,0,0,0.65)] backdrop-blur-xl">
       <div className="flex items-start gap-3 border-b border-border/50 px-4 py-4">
-        <div className="flex size-10 items-center justify-center rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/18 via-primary/10 to-background/30 text-primary shadow-[0_10px_25px_-18px_rgba(0,0,0,0.7)]">
-          <Bot className="size-4.5" />
-        </div>
+        <ZoyaAvatar size={40} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="font-medium text-foreground">AI Copilot</p>
+            <p className="font-medium text-foreground">Zoya</p>
             <Badge variant="outline" className="rounded-full border-primary/20 bg-primary/10 text-[10px] uppercase tracking-[0.24em] text-primary">
-              Live synthesis
-            </Badge>
-            <Badge variant="outline" className="rounded-full border-border/70 bg-background/60 text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
-              Structured answer
+              Your money sidekick
             </Badge>
           </div>
-          <p className="mt-1 text-xs text-muted-foreground">Multi-agent synthesis with clear action items, evidence, and guardrails.</p>
+          <p className="mt-1 text-xs text-muted-foreground">Personal advice pulled from your actual income, spends and loans.</p>
         </div>
       </div>
 
@@ -343,9 +339,11 @@ export function ChatThinkingCard({
 }) {
   return (
     <div className="max-w-[96%] rounded-[28px] border border-primary/20 bg-gradient-to-br from-primary/10 via-background/65 to-background/35 px-4 py-4 text-sm text-foreground/90 shadow-[0_18px_45px_-35px_rgba(0,0,0,0.7)]">
-      <div className="flex items-center gap-2 text-primary">
-        <span className="size-2 animate-pulse rounded-full bg-primary" />
-        <span className="text-[0.72rem] uppercase tracking-[0.24em]">Thinking</span>
+      <div className="flex items-center gap-3">
+        <ZoyaAvatar size={32} thinking />
+        <div className="flex flex-col">
+          <span className="text-[0.72rem] uppercase tracking-[0.24em] text-primary">Zoya is thinking…</span>
+        </div>
       </div>
       <p className="mt-3 leading-7">{text}</p>
       {activeAgents.length > 0 && (

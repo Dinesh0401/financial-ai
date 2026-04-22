@@ -20,7 +20,7 @@ const navItems = [
   { href: "/analysis", label: "My Money Story", icon: BarChart3 },
   { href: "/transactions", label: "Transactions", icon: ReceiptText },
   { href: "/goals", label: "Goals", icon: Goal },
-  { href: "/chat", label: "AI Copilot", icon: Bot },
+  { href: "/chat", label: "Ask Zoya", icon: Bot },
   { href: "/guide", label: "How to Use", icon: BookOpen },
 ];
 
@@ -70,11 +70,11 @@ function NavContent() {
           </div>
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-primary">Finzova</p>
-            <h1 className="text-lg font-semibold tracking-tight leading-none">Financial Copilot</h1>
+            <h1 className="text-lg font-semibold tracking-tight leading-none">Your money sidekick</h1>
           </div>
         </div>
         <p className="mt-3 text-xs leading-5 text-muted-foreground">
-          Deterministic agent pipeline for your money — analyze, plan, decide.
+          Personal money advice built on your real income, spends and goals.
         </p>
       </div>
       <nav className="flex flex-col gap-1">
@@ -169,7 +169,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-primary">Finzova</p>
-              <h1 className="text-lg font-semibold leading-none">Financial Copilot</h1>
+              <h1 className="text-lg font-semibold leading-none">Your money sidekick</h1>
             </div>
           </div>
           <Sheet>

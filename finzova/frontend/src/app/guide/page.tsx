@@ -124,17 +124,17 @@ const STEPS: Step[] = [
   },
   {
     number: "07",
-    title: "Ask the AI Copilot",
+    title: "Ask Zoya",
     description:
-      "Chat with your AI Copilot for on-demand advice. It knows your transactions, goals, and risk profile — so answers are specific to you, not generic tips.",
+      "Zoya is your money sidekick. She knows your income, spends, loans and goals — so answers are specific to you, not generic tips.",
     icon: Bot,
     tips: [
-      "Try: 'Where am I overspending this month?'",
+      "Try: 'Where am I spending the most this month?'",
+      "Try: 'How can I reduce my biggest expense?'",
       "Try: 'How do I pay off my highest-interest loan faster?'",
-      "Try: 'Am I saving enough for my house goal?'",
     ],
     href: "/chat",
-    cta: "Open AI Copilot",
+    cta: "Open Zoya",
   },
 ];
 
@@ -281,7 +281,7 @@ export default function GuidePage() {
               <Link href="/chat">
                 <Button>
                   <Bot className="mr-2 size-4" />
-                  Ask the Copilot
+                  Ask Zoya
                 </Button>
               </Link>
             </div>

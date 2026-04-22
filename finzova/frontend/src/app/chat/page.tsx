@@ -2,12 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowUp, Bot, Loader2, Sparkles, User2 } from "lucide-react";
+import { ArrowUp, Loader2, Sparkles, User2 } from "lucide-react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 
 import { AppShell } from "@/components/app-shell";
 import { ChatMessageBubble, ChatThinkingCard } from "@/components/chat/chat-message-bubble";
+import { ZoyaAvatar } from "@/components/zoya-avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { API_BASE_URL } from "@/lib/api";
@@ -181,15 +182,13 @@ export default function ChatPage() {
         <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-4 pt-2">
           {isEmpty ? (
             <div data-animate="welcome" className="flex min-h-full flex-col items-center justify-center py-10 text-center">
-              <div className="flex size-16 items-center justify-center rounded-3xl border border-primary/25 bg-gradient-to-br from-primary/20 via-primary/10 to-transparent text-primary">
-                <Bot className="size-8" />
-              </div>
+              <ZoyaAvatar size={72} />
               <h1 className="mt-6 text-3xl font-semibold tracking-tight sm:text-4xl">
-                How can I help with your money today?
+                Hi, I'm <span className="bg-gradient-to-r from-primary to-emerald-300 bg-clip-text text-transparent">Zoya</span>. Ask me anything about your money.
               </h1>
               <p className="mt-3 max-w-lg text-sm leading-7 text-muted-foreground">
-                I'm your AI Copilot, powered by 6 specialist agents. I know your transactions, goals, and risk profile —
-                so I can give you answers that are actually about you.
+                I know your income, spends, loans and goals from setup — so the answers are about you, not generic tips.
+                Try a simple question like "where am I spending the most?" and then "how can I reduce it?"
               </p>
 
               <div className="mt-10 grid w-full gap-3 sm:grid-cols-2">
@@ -239,7 +238,7 @@ export default function ChatPage() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Message your AI Copilot..."
+              placeholder="Ask Zoya anything..."
               className="min-h-[44px] flex-1 resize-none border-0 bg-transparent px-1 py-2 shadow-none placeholder:text-muted-foreground/70 focus-visible:ring-0"
               disabled={streaming}
               rows={1}
@@ -255,7 +254,7 @@ export default function ChatPage() {
           </div>
           <p className="mt-2 px-2 text-center text-[10px] text-muted-foreground">
             <Sparkles className="mr-1 inline size-3 text-primary" />
-            Powered by 6 autonomous AI agents · Responses reflect your actual financial data
+            Zoya uses your own data — private, personal, no fluff
           </p>
         </div>
       </div>
