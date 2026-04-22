@@ -408,10 +408,19 @@ export default function GoalsPage() {
                     <div className="rounded-3xl border border-border/50 bg-background/30 p-4">
                       <div className="flex items-center justify-between gap-4">
                         <div>
-                          <p className="text-sm text-muted-foreground">Success probability</p>
-                          <p className="mt-2 text-3xl font-semibold">{formatPercent(goal.success_probability)}</p>
+                          <p className="text-sm text-muted-foreground">Chance of hitting it</p>
+                          <p className="mt-2 text-3xl font-semibold">
+                            {goal.success_probability <= 1
+                              ? "Just started"
+                              : formatPercent(goal.success_probability)}
+                          </p>
+                          {goal.success_probability <= 1 && goal.goal.monthly_required != null && (
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              Save ₹{Math.ceil(Number(goal.goal.monthly_required)).toLocaleString("en-IN")}/mo to get there on time.
+                            </p>
+                          )}
                         </div>
-                        <p className="text-sm text-primary">{goal.on_track ? "On track" : "Needs intervention"}</p>
+                        <p className="text-sm text-primary">{goal.on_track ? "On track" : "Needs a boost"}</p>
                       </div>
                       <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/8">
                         <div

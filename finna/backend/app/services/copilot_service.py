@@ -165,6 +165,65 @@ def _build_investment_fallback(
     return "\n\n".join(sections)
 
 
+def _months_to_close(principal: float, annual_rate_pct: float, emi: float) -> int | None:
+    if principal <= 0 or emi <= 0 or annual_rate_pct < 0:
+        return None
+    r = (annual_rate_pct / 12.0) / 100.0
+    if r == 0:
+        return int(round(principal / emi))
+    if emi <= principal * r:
+        return None
+    import math
+    n = math.log(emi / (emi - principal * r)) / math.log(1 + r)
+    return int(math.ceil(n))
+
+
+def _build_snapshot_loan_answer(*, snapshot_loans: list[dict], profile: dict) -> str:
+    ranked = sorted(
+        snapshot_loans,
+        key=lambda l: float(l.get("interest") or 0),
+        reverse=True,
+    )
+    lines = [
+        "Here is the payoff plan based on the loans you entered during setup.",
+        "",
+        "**Your Loans (highest-rate first)**",
+    ]
+    total_balance = 0.0
+    total_emi = 0.0
+    for idx, loan in enumerate(ranked, 1):
+        name = loan.get("name") or loan.get("type") or "Loan"
+        balance = float(loan.get("balance") or 0)
+        emi = float(loan.get("emi") or 0)
+        rate = float(loan.get("interest") or 0)
+        total_balance += balance
+        total_emi += emi
+        months = _months_to_close(balance, rate, emi)
+        boosted_emi = round(emi * 1.2)
+        boosted_months = _months_to_close(balance, rate, boosted_emi)
+        if months and boosted_months:
+            saved = max(0, months - boosted_months)
+            lines.append(
+                f"{idx}. **{name}** — Rs {balance:,.0f} at {rate:.1f}% · EMI Rs {emi:,.0f} · closes in ~{months} months. "
+                f"Bump EMI to Rs {boosted_emi:,.0f} and you close it ~{saved} months earlier."
+            )
+        else:
+            lines.append(f"{idx}. **{name}** — Rs {balance:,.0f} at {rate:.1f}% · EMI Rs {emi:,.0f}.")
+
+    lines.extend([
+        "",
+        "**Totals**",
+        f"- Outstanding debt: Rs {total_balance:,.0f}",
+        f"- Total EMI per month: Rs {total_emi:,.0f}",
+        "",
+        "**What to do next**",
+        "1. Attack the top-rate loan first (avalanche method) — interest savings are the largest there.",
+        "2. Keep minimum EMIs running on the rest.",
+        "3. Avoid taking on any new EMIs while you clear these.",
+    ])
+    return "\n".join(lines)
+
+
 def _build_no_loan_debt_fallback(*, metrics: dict, profile: dict) -> str:
     monthly_income, monthly_expenses, monthly_surplus, conservative_estimate = _estimate_monthly_capacity(
         metrics,
@@ -309,8 +368,17 @@ class CopilotService:
         )
 
         debt_ratio = float(metrics_dict.get("debt_ratio", 0) or 0)
+        snapshot_loans = []
+        if isinstance(user.onboarding_snapshot, dict):
+            raw_loans = user.onboarding_snapshot.get("loans") or []
+            if isinstance(raw_loans, list):
+                snapshot_loans = [l for l in raw_loans if isinstance(l, dict) and float(l.get("balance") or 0) > 0]
+
         if _is_loan_intent(message) and debt_ratio <= 0:
-            final_message = _build_no_loan_debt_fallback(metrics=metrics_dict, profile=context.profile)
+            if snapshot_loans:
+                final_message = _build_snapshot_loan_answer(snapshot_loans=snapshot_loans, profile=context.profile)
+            else:
+                final_message = _build_no_loan_debt_fallback(metrics=metrics_dict, profile=context.profile)
             yield _sse("message", {"content": final_message})
 
             session.add(ChatMessage(user_id=user.id, session_id=conversation_id, role="user", content=message))
