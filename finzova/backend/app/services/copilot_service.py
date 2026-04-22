@@ -526,6 +526,34 @@ def _months_to_close(principal: float, annual_rate_pct: float, emi: float) -> in
     return int(math.ceil(n))
 
 
+def _format_duration(months: int | None) -> str:
+    if months is None or months <= 0:
+        return "—"
+    years, rem = divmod(months, 12)
+    if years == 0:
+        return f"{rem} month{'s' if rem != 1 else ''}"
+    if rem == 0:
+        return f"{years} year{'s' if years != 1 else ''}"
+    return f"{years} year{'s' if years != 1 else ''} {rem} month{'s' if rem != 1 else ''}"
+
+
+def _payoff_date(months: int | None) -> str:
+    if months is None or months <= 0:
+        return ""
+    from datetime import date
+    today = date.today()
+    total_month = today.month - 1 + months
+    year = today.year + total_month // 12
+    new_month = total_month % 12 + 1
+    return date(year, new_month, 1).strftime("%b %Y")
+
+
+def _total_interest_remaining(principal: float, annual_rate_pct: float, emi: float, months: int | None) -> float:
+    if months is None or months <= 0 or emi <= 0:
+        return 0.0
+    return max(0.0, emi * months - principal)
+
+
 def _build_snapshot_loan_answer(*, snapshot_loans: list[dict], profile: dict) -> str:
     ranked = sorted(
         snapshot_loans,
@@ -533,12 +561,14 @@ def _build_snapshot_loan_answer(*, snapshot_loans: list[dict], profile: dict) ->
         reverse=True,
     )
     lines = [
-        "Here is the payoff plan based on the loans you entered during setup.",
+        "Here is when each loan will close at your current EMI (based on what you entered during setup).",
         "",
-        "**Your Loans (highest-rate first)**",
+        "**Your Loans**",
     ]
     total_balance = 0.0
     total_emi = 0.0
+    total_interest = 0.0
+    longest_months = 0
     for idx, loan in enumerate(ranked, 1):
         name = loan.get("name") or loan.get("type") or "Loan"
         balance = float(loan.get("balance") or 0)
@@ -547,28 +577,71 @@ def _build_snapshot_loan_answer(*, snapshot_loans: list[dict], profile: dict) ->
         total_balance += balance
         total_emi += emi
         months = _months_to_close(balance, rate, emi)
-        boosted_emi = round(emi * 1.2)
+        boosted_emi = int(round(emi * 1.2))
         boosted_months = _months_to_close(balance, rate, boosted_emi)
-        if months and boosted_months:
-            saved = max(0, months - boosted_months)
+        if months is not None:
+            longest_months = max(longest_months, months)
+            interest = _total_interest_remaining(balance, rate, emi, months)
+            total_interest += interest
+            boosted_interest = _total_interest_remaining(balance, rate, boosted_emi, boosted_months) if boosted_months else interest
+            date_str = _payoff_date(months)
             lines.append(
-                f"{idx}. **{name}** — Rs {balance:,.0f} at {rate:.1f}% · EMI Rs {emi:,.0f} · closes in ~{months} months. "
-                f"Bump EMI to Rs {boosted_emi:,.0f} and you close it ~{saved} months earlier."
+                f"{idx}. **{name}** — Rs {balance:,.0f} outstanding at {rate:.1f}% · EMI Rs {emi:,.0f}"
             )
+            lines.append(
+                f"    · Closes in **{_format_duration(months)}** (around {date_str}) · approx Rs {interest:,.0f} in interest left."
+            )
+            if boosted_months and boosted_months < months:
+                saved_months = months - boosted_months
+                saved_interest = max(0.0, interest - boosted_interest)
+                lines.append(
+                    f"    · Bump EMI to Rs {boosted_emi:,.0f} (+20%) and you close {_format_duration(saved_months)} earlier — saves about Rs {saved_interest:,.0f} in interest."
+                )
         else:
-            lines.append(f"{idx}. **{name}** — Rs {balance:,.0f} at {rate:.1f}% · EMI Rs {emi:,.0f}.")
+            lines.append(
+                f"{idx}. **{name}** — Rs {balance:,.0f} at {rate:.1f}% · EMI Rs {emi:,.0f}. "
+                "EMI is too low to cover the interest, so it won't close at this pace — raise the EMI or refinance."
+            )
+
+    lines.append("")
+    lines.append("**Totals**")
+    lines.append(f"- Outstanding debt: Rs {total_balance:,.0f}")
+    lines.append(f"- Total EMI per month: Rs {total_emi:,.0f}")
+    if longest_months > 0:
+        lines.append(
+            f"- You'll be debt-free in about **{_format_duration(longest_months)}** (around {_payoff_date(longest_months)}) if you keep paying the current EMIs."
+        )
+    if total_interest > 0:
+        lines.append(f"- Interest remaining across all loans: about Rs {total_interest:,.0f}.")
 
     lines.extend([
         "",
-        "**Totals**",
-        f"- Outstanding debt: Rs {total_balance:,.0f}",
-        f"- Total EMI per month: Rs {total_emi:,.0f}",
-        "",
         "**What to do next**",
         "1. Attack the top-rate loan first (avalanche method) — interest savings are the largest there.",
-        "2. Keep minimum EMIs running on the rest.",
-        "3. Avoid taking on any new EMIs while you clear these.",
+        "2. Keep minimum EMIs running on the rest so nothing goes delinquent.",
+        "3. Avoid taking on new EMIs while you clear these.",
+        "",
+        "Tell me which specific loan you want to close early and I'll run a custom plan.",
     ])
+    return "\n".join(lines)
+
+
+def _build_loan_timeline_block(snapshot_loans: list[dict]) -> str:
+    if not snapshot_loans:
+        return ""
+    lines: list[str] = []
+    for loan in snapshot_loans:
+        name = loan.get("name") or loan.get("type") or "Loan"
+        balance = float(loan.get("balance") or 0)
+        emi = float(loan.get("emi") or 0)
+        rate = float(loan.get("interest") or 0)
+        months = _months_to_close(balance, rate, emi)
+        if months is None:
+            lines.append(f"  - {name}: Rs {balance:,.0f} at {rate:.1f}% · EMI Rs {emi:,.0f} (won't close at current EMI)")
+            continue
+        lines.append(
+            f"  - {name}: Rs {balance:,.0f} at {rate:.1f}% · EMI Rs {emi:,.0f} · closes in {_format_duration(months)} (around {_payoff_date(months)})"
+        )
     return "\n".join(lines)
 
 
@@ -775,7 +848,7 @@ class CopilotService:
             })
             return
 
-        if _is_loan_intent(message) and debt_ratio <= 0:
+        if _is_loan_intent(message) and (snapshot_loans or debt_ratio <= 0):
             if snapshot_loans:
                 final_message = _build_snapshot_loan_answer(snapshot_loans=snapshot_loans, profile=context.profile)
             else:
@@ -819,7 +892,9 @@ class CopilotService:
                         except (TypeError, ValueError):
                             continue
 
-            if snap_total > 0 or snap_income > 0:
+            loan_timeline_block = _build_loan_timeline_block(snapshot_loans)
+
+            if snap_total > 0 or snap_income > 0 or snapshot_loans:
                 category_lines = "\n".join(
                     f"  - {category.replace('_', ' ').title()}: Rs {amount:,.0f}/mo"
                     + (f" ({(amount / snap_total * 100):.0f}% of spend)" if snap_total > 0 else "")
@@ -831,6 +906,7 @@ class CopilotService:
                     f"- Total monthly expenses: Rs {snap_total:,.0f}\n"
                     f"- Total monthly EMIs: Rs {snap_emi_total:,.0f}\n"
                     + (f"- Top categories:\n{category_lines}\n" if snap_breakdown else "")
+                    + (f"- Loan payoff timelines:\n{loan_timeline_block}\n" if loan_timeline_block else "")
                 )
 
         system_prompt = (
@@ -842,6 +918,9 @@ class CopilotService:
             "When the user asks simple follow-ups like 'how can I reduce it', 'cut this down', 'save more', "
             "ground every tip in their actual top categories from the snapshot, give 2-3 India-specific steps per category, "
             "and quantify the monthly rupee saving of each suggestion. Do not give generic advice. "
+            "When the user asks when a loan will be paid off / how many months or years it will take / payoff date, "
+            "use the payoff timelines in the snapshot block. Give the exact duration in years+months, the approximate finish month/year, "
+            "and the remaining interest amount. Also offer a 20% EMI-bump scenario showing how much earlier it closes. "
             "If the user asks about affordability or goals, give clear yes/no with reasoning. "
             "If the user asks for an investment plan, build it from income, surplus, debt, and emergency-fund capacity. "
             "If debt ratio is 0 and no loans exist in the snapshot, explicitly say no active loan is detected and do not invent payoff order, lenders, or debt amounts. "
