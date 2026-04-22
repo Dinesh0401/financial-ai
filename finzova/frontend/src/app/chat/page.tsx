@@ -22,11 +22,11 @@ type Message = {
 };
 
 const STARTER_PROMPTS = [
-  { label: "Where am I overspending this month?", emoji: "🔍" },
+  { label: "Where am I spending the most this month?", emoji: "🔍" },
+  { label: "How can I reduce my biggest expense?", emoji: "✂️" },
   { label: "How do I pay off my highest-interest loan faster?", emoji: "💳" },
   { label: "Am I saving enough for my house goal?", emoji: "🏠" },
   { label: "What tax savings am I missing?", emoji: "💰" },
-  { label: "Should I invest more or clear debt first?", emoji: "⚖️" },
   { label: "Give me a 30-second financial health check.", emoji: "❤️" },
 ];
 

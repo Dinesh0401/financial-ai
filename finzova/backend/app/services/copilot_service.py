@@ -77,6 +77,213 @@ def _is_expense_intent(message: str) -> bool:
     return any(keyword in lowered for keyword in keywords)
 
 
+def _is_reduce_intent(message: str) -> bool:
+    lowered = message.lower()
+    phrases = (
+        "how can i reduce",
+        "how do i reduce",
+        "how to reduce",
+        "reduce it",
+        "reduce my",
+        "reduce this",
+        "cut down",
+        "cut back",
+        "how to cut",
+        "where can i cut",
+        "how can i save",
+        "how do i save",
+        "how to save more",
+        "save more",
+        "spend less",
+        "lower my expenses",
+        "lower my spending",
+        "bring it down",
+        "bring down",
+        "trim my",
+        "tips to save",
+        "ways to save",
+    )
+    return any(p in lowered for p in phrases)
+
+
+CATEGORY_TIPS: dict[str, list[str]] = {
+    "food": [
+        "Cook 2-3 dinners a week at home — typically saves Rs 800-1,500/week vs Swiggy/Zomato.",
+        "Batch-order groceries on Sunday; skip midweek quick-commerce trips that add 15-20%.",
+        "Put a Rs 250 order cap in your food app to block late-night impulse orders.",
+    ],
+    "food_dining": [
+        "Cook 2-3 dinners a week at home — typically saves Rs 800-1,500/week vs Swiggy/Zomato.",
+        "Put a Rs 250 per-order cap in your food app to block late-night impulse orders.",
+    ],
+    "rent": [
+        "If rent is above 30% of income, a 2-3 km shift out of the prime zone usually saves Rs 5,000-10,000/month.",
+        "A flatmate share halves both rent and utilities right away.",
+    ],
+    "rent_housing": [
+        "If rent is above 30% of income, a 2-3 km shift out of the prime zone usually saves Rs 5,000-10,000/month.",
+        "A flatmate share halves both rent and utilities right away.",
+    ],
+    "housing": [
+        "If rent is above 30% of income, a 2-3 km shift out of the prime zone usually saves Rs 5,000-10,000/month.",
+    ],
+    "transport": [
+        "Swap 2-3 weekly cab rides for metro/bus — Rs 1,200-2,000/month back in a metro city.",
+        "Consolidate errands into one trip; fuel cost per km drops on longer trips vs many short starts.",
+    ],
+    "fuel": [
+        "Keep tyre pressure at spec and service on time — typical fuel drop of 6-10%.",
+        "Work-from-home 2 days/week if allowed — easy 20-30% fuel saving.",
+    ],
+    "shopping": [
+        "Delete saved cards from Amazon/Flipkart/Myntra — cart friction cuts impulse spend ~40%.",
+        "Use the 72-hour wait rule for any non-essential item over Rs 2,000.",
+    ],
+    "entertainment": [
+        "Audit OTTs — keep 2 active and rotate, share annual family plans; saves Rs 400-900/mo.",
+        "Replace one theatre outing/month with home viewing — Rs 800-1,500 saved per swap.",
+    ],
+    "subscriptions": [
+        "Open 'UPI Autopay' in GPay/PhonePe and cancel anything you haven't used in 30+ days.",
+    ],
+    "utilities": [
+        "Switch remaining bulbs to LED — recovers Rs 200-400/month on a typical 2BHK.",
+        "Unplug the geyser + TV standby loops; 5-8% off the bill.",
+    ],
+    "emi_loan": [
+        "If any loan is above 12% interest, consider a balance transfer — can save Rs 2,000-5,000/month.",
+        "Round up your EMI by 10% — closes the loan 18-24 months earlier and cuts total interest.",
+    ],
+    "groceries": [
+        "Buy staples monthly at BigBasket/DMart instead of daily at the kirana — 15-20% cheaper on average.",
+        "Shop from a list; avoid the end-cap placement traps.",
+    ],
+    "healthcare": [
+        "Keep a top-up health policy (Rs 300-500/month) — one ER visit can wipe out 6 months of savings.",
+        "Use employer cashless OPD if you have it; don't pay out of pocket when claimable.",
+    ],
+    "insurance": [
+        "Review term cover against your current salary — under-insurance is the common case.",
+    ],
+    "education": [
+        "Children's tuition fees qualify under 80C. If you're on the old regime, claim it.",
+    ],
+    "personal_care": [
+        "Bulk-order toiletries via Amazon 'Subscribe & Save' — 10-15% off on the same items.",
+    ],
+    "travel": [
+        "Book trains/flights 45+ days ahead — 30-50% cheaper than within-fortnight bookings.",
+    ],
+    "miscellaneous": [
+        "Tag these spends for 14 days — 'miscellaneous' usually hides 2-3 fixable leaks.",
+    ],
+    "other": [
+        "Tag these spends for 14 days — 'other' usually hides 2-3 fixable leaks.",
+    ],
+}
+
+
+def _tips_for_category(raw_key: str) -> list[str]:
+    norm = raw_key.lower().replace("-", "_").strip()
+    if norm in CATEGORY_TIPS:
+        return CATEGORY_TIPS[norm]
+    flat = norm.replace("_", " ")
+    aliases = {
+        "food": ("food", "dining", "restaurant", "swiggy", "zomato"),
+        "rent": ("rent", "housing", "home loan"),
+        "transport": ("transport", "commute", "ola", "uber", "cab", "ride"),
+        "fuel": ("fuel", "petrol", "diesel"),
+        "shopping": ("shopping", "clothes", "apparel", "myntra", "flipkart"),
+        "entertainment": ("entertainment", "movie", "ott", "netflix", "prime"),
+        "subscriptions": ("subscription", "streaming"),
+        "utilities": ("utility", "utilities", "electricity", "water", "internet", "broadband", "wifi"),
+        "emi_loan": ("emi", "loan"),
+        "groceries": ("grocer", "vegetable", "kirana"),
+        "healthcare": ("health", "medical", "doctor", "medicine", "pharma"),
+        "insurance": ("insurance",),
+        "education": ("education", "tuition", "school", "college"),
+        "personal_care": ("personal care", "salon", "beauty"),
+        "travel": ("travel", "vacation", "trip", "holiday"),
+    }
+    for key, words in aliases.items():
+        if any(w in flat for w in words):
+            return CATEGORY_TIPS[key]
+    return [
+        "Track this category daily for 14 days — awareness alone usually shaves 10-15%.",
+        "Set a weekly cap in your budgeting app and treat it as a hard stop.",
+        "Before each spend ask 'need or want?' — if 'want', wait 48 hours.",
+    ]
+
+
+def _build_reduction_plan(snapshot: dict | None, metrics: dict) -> str:
+    if not isinstance(snapshot, dict):
+        snapshot = {}
+    total, breakdown = _extract_snapshot_expenses(snapshot)
+
+    if total <= 0:
+        category_breakdown = metrics.get("category_breakdown", {}) or {}
+        for category, amount in category_breakdown.items():
+            try:
+                val = float(amount or 0)
+            except (TypeError, ValueError):
+                continue
+            if val > 0:
+                breakdown.append((str(category), val))
+                total += val
+        breakdown.sort(key=lambda item: item[1], reverse=True)
+
+    if not breakdown:
+        return (
+            "I need your monthly spending split before I can give you concrete cuts. "
+            "Add category-wise expenses in onboarding or upload a bank/UPI statement and ask me again."
+        )
+
+    top = breakdown[:3]
+    income = 0.0
+    try:
+        income = float(snapshot.get("income") or 0)
+    except (TypeError, ValueError):
+        income = 0.0
+    if income <= 0:
+        try:
+            income = float(metrics.get("total_income", 0) or 0)
+        except (TypeError, ValueError):
+            income = 0.0
+
+    lines: list[str] = []
+    if income > 0:
+        lines.append(
+            f"Here is a concrete reduction plan for your top {len(top)} spending areas on your Rs {income:,.0f}/mo income."
+        )
+    else:
+        lines.append(
+            f"Here is a concrete reduction plan for your top {len(top)} spending areas."
+        )
+    lines.append("")
+
+    total_save = 0
+    for key, amount in top:
+        pretty = key.replace("_", " ").title()
+        share_pct = (amount / total * 100) if total > 0 else 0
+        save = int(round(amount * 0.15))
+        total_save += save
+        lines.append(
+            f"**{pretty}** — Rs {amount:,.0f}/mo ({share_pct:.0f}% of spend) · target a 15% trim ≈ Rs {save:,}/mo back"
+        )
+        for tip in _tips_for_category(key)[:2]:
+            lines.append(f"- {tip}")
+        lines.append("")
+
+    lines.append(f"**If you hit all three: about Rs {total_save:,}/month back.**")
+    lines.append(f"Over 12 months that compounds to roughly Rs {total_save * 12:,}.")
+    lines.append("")
+    lines.append(
+        "Start with just one category — one clean win beats half-doing three. "
+        "Tell me which one you want to tackle first and I'll give you a weekly plan."
+    )
+    return "\n".join(lines)
+
+
 def _extract_snapshot_expenses(snapshot: dict | None) -> tuple[float, list[tuple[str, float]]]:
     if not isinstance(snapshot, dict):
         return 0.0, []
@@ -515,6 +722,32 @@ class CopilotService:
             if isinstance(raw_loans, list):
                 snapshot_loans = [l for l in raw_loans if isinstance(l, dict) and float(l.get("balance") or 0) > 0]
 
+        if _is_reduce_intent(message):
+            final_message = _build_reduction_plan(
+                snapshot=user.onboarding_snapshot if isinstance(user.onboarding_snapshot, dict) else None,
+                metrics=metrics_dict,
+            )
+            yield _sse("message", {"content": final_message})
+
+            session.add(ChatMessage(user_id=user.id, session_id=conversation_id, role="user", content=message))
+            session.add(
+                ChatMessage(
+                    user_id=user.id,
+                    session_id=conversation_id,
+                    role="assistant",
+                    content=final_message,
+                    agent_reasoning={"agents": [a["agent_name"] for a in orchestrated["agents"]], "findings_count": len(orchestrated["findings"])},
+                    tools_used=[agent["agent_name"] for agent in orchestrated["agents"]],
+                )
+            )
+            await session.flush()
+
+            yield _sse("done", {
+                "session_id": conversation_id,
+                "tools_used": [agent["agent_name"] for agent in orchestrated["agents"]],
+            })
+            return
+
         if _is_expense_intent(message):
             final_message = _build_monthly_expense_answer(
                 metrics=metrics_dict,
@@ -568,14 +801,49 @@ class CopilotService:
             })
             return
 
+        snapshot_block = ""
+        if isinstance(user.onboarding_snapshot, dict):
+            snap_total, snap_breakdown = _extract_snapshot_expenses(user.onboarding_snapshot)
+            snap_income = 0.0
+            try:
+                snap_income = float(user.onboarding_snapshot.get("income") or 0)
+            except (TypeError, ValueError):
+                snap_income = 0.0
+            snap_emi_total = 0.0
+            raw_snap_loans = user.onboarding_snapshot.get("loans") or []
+            if isinstance(raw_snap_loans, list):
+                for loan in raw_snap_loans:
+                    if isinstance(loan, dict):
+                        try:
+                            snap_emi_total += float(loan.get("emi") or 0)
+                        except (TypeError, ValueError):
+                            continue
+
+            if snap_total > 0 or snap_income > 0:
+                category_lines = "\n".join(
+                    f"  - {category.replace('_', ' ').title()}: Rs {amount:,.0f}/mo"
+                    + (f" ({(amount / snap_total * 100):.0f}% of spend)" if snap_total > 0 else "")
+                    for category, amount in snap_breakdown[:6]
+                )
+                snapshot_block = (
+                    "\nONBOARDING SNAPSHOT (self-reported monthly numbers — authoritative when transactions are missing):\n"
+                    f"- Monthly income: Rs {snap_income:,.0f}\n"
+                    f"- Total monthly expenses: Rs {snap_total:,.0f}\n"
+                    f"- Total monthly EMIs: Rs {snap_emi_total:,.0f}\n"
+                    + (f"- Top categories:\n{category_lines}\n" if snap_breakdown else "")
+                )
+
         system_prompt = (
             "You are an India-first agentic AI financial copilot with 6 specialist agents. "
             "You have just run multiple specialist agents (expense, debt, goal, risk, investment, tax) "
             "on the user's real financial data. Use the agent findings below to give a personalized, "
             "conversational response. Be specific with numbers (use Rs). Be actionable. "
+            "When the user asks simple follow-ups like 'how can I reduce it', 'cut this down', 'save more', "
+            "ground every tip in their actual top categories from the snapshot, give 2-3 India-specific steps per category, "
+            "and quantify the monthly rupee saving of each suggestion. Do not give generic advice. "
             "If the user asks about affordability or goals, give clear yes/no with reasoning. "
             "If the user asks for an investment plan, build it from income, surplus, debt, and emergency-fund capacity. "
-            "If debt ratio is 0 or there are no active EMI/loan outflows, explicitly say no active loan is detected and do not invent payoff order, lenders, or debt amounts. "
+            "If debt ratio is 0 and no loans exist in the snapshot, explicitly say no active loan is detected and do not invent payoff order, lenders, or debt amounts. "
             "Do not recommend specific stocks, IPOs, or MTF trades unless live market data and suitability data are available. "
             "Explain that ETFs and diversified mutual funds are core instruments, while direct stocks are satellite ideas and MTF is not a passive-income tool. "
             "Keep it concise but thorough (2-4 paragraphs max).\n\n"
@@ -584,7 +852,8 @@ class CopilotService:
             f"Expenses: Rs {metrics_dict.get('total_expenses', 0):,.0f}\n"
             f"Profile monthly income: Rs {(float(user.monthly_income) if user.monthly_income is not None else 0):,.0f}\n"
             f"Savings rate: {metrics_dict.get('savings_rate', 0) * 100:.1f}%\n"
-            f"Health score: based on {len(transactions)} transactions\n\n"
+            f"Health score: based on {len(transactions)} transactions"
+            f"{snapshot_block}\n\n"
             f"AGENT FINDINGS:\n{findings_text}\n\n"
             f"RECOMMENDATIONS:\n{recommendations_text or 'None generated.'}"
         )
