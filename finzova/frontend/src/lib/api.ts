@@ -95,7 +95,7 @@ function getAuthHeaders(
   const token =
     accessToken ??
     (typeof window !== "undefined"
-      ? localStorage.getItem("finna_access_token")
+      ? localStorage.getItem("finzova_access_token")
       : null);
   if (token) {
     headers.Authorization = `Bearer ${token}`;

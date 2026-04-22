@@ -53,7 +53,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="Finna Backend Foundation",
+    title="Finzova Backend Foundation",
     version="0.1.0",
     lifespan=lifespan,
 )

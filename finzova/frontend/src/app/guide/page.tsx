@@ -180,7 +180,7 @@ export default function GuidePage() {
                 <Badge variant="outline" className="rounded-full border-primary/25 bg-primary/10 text-[10px] uppercase tracking-[0.24em] text-primary">
                   Getting Started
                 </Badge>
-                <CardTitle className="text-3xl sm:text-4xl">How to use Finna AI</CardTitle>
+                <CardTitle className="text-3xl sm:text-4xl">How to use Finzova AI</CardTitle>
                 <p className="max-w-2xl text-sm leading-7 text-muted-foreground">
                   A 7-step walkthrough to go from zero to full financial visibility.
                   Follow the steps in order the first time — after that, use the app however you like.

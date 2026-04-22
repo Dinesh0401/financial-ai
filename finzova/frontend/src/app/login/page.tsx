@@ -77,7 +77,7 @@ export default function LoginPage() {
           <div className="flex items-center gap-2 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1">
             <Sparkles className="size-3.5 text-emerald-400" />
             <span className="text-xs font-semibold uppercase tracking-widest text-emerald-400">
-              Finna
+              Finzova
             </span>
           </div>
           <h1 className="mt-5 text-3xl font-semibold text-white sm:text-4xl">

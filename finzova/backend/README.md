@@ -1,6 +1,6 @@
-# Finna Backend
+# Finzova Backend
 
-Backend foundation for Finna, an India-first financial copilot.
+Backend foundation for Finzova, an India-first financial copilot.
 
 ## Local runtime
 
@@ -13,6 +13,6 @@ docker compose up --build
 ## Migrations
 
 ```bash
-cd finna/backend
+cd finzova/backend
 alembic upgrade head
 ```

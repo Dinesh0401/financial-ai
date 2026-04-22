@@ -7,7 +7,7 @@ import time
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 
-logger = logging.getLogger("finna.request")
+logger = logging.getLogger("finzova.request")
 
 
 class RequestLoggerMiddleware(BaseHTTPMiddleware):

@@ -500,11 +500,11 @@ def _parse_ocr_balance_value(value: str) -> Decimal:
 
 
 def _ocr_backend_preference() -> str:
-    return os.getenv("FINNA_OCR_BACKEND", "auto").strip().lower()
+    return os.getenv("FINZOVA_OCR_BACKEND", "auto").strip().lower()
 
 
 def _configure_tesseract_binary(pytesseract_module: Any) -> None:
-    configured_path = os.getenv("FINNA_TESSERACT_CMD") or os.getenv("TESSERACT_CMD")
+    configured_path = os.getenv("FINZOVA_TESSERACT_CMD") or os.getenv("TESSERACT_CMD")
     if configured_path:
         pytesseract_module.pytesseract.tesseract_cmd = configured_path
 
@@ -762,7 +762,7 @@ def _ocr_bridge_script() -> Path:
 
 def _windows_ocr_command_candidates() -> list[list[str]]:
     candidates: list[list[str]] = []
-    configured = os.getenv("FINNA_OCR_PYTHON")
+    configured = os.getenv("FINZOVA_OCR_PYTHON")
     if configured:
         candidates.append([configured])
 
@@ -870,7 +870,7 @@ def _parse_pdf_rows_via_ocr(
     parsed: list[ParsedTransactionRow] = []
     failures: list[ParseFailure] = []
 
-    with tempfile.TemporaryDirectory(prefix="finna-ocr-") as temp_directory:
+    with tempfile.TemporaryDirectory(prefix="finzova-ocr-") as temp_directory:
         temp_path = Path(temp_directory)
         with _open_pdf_document(file_bytes, password=password) as pdf:
             for page_index, page in enumerate(pdf.pages, start=1):

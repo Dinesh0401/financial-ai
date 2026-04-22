@@ -26,7 +26,7 @@ export type OnboardingSnapshot = {
   savedAt: string;
 };
 
-const STORAGE_KEY = "finna_onboarding_snapshot";
+const STORAGE_KEY = "finzova_onboarding_snapshot";
 
 function isValidSnapshot(x: unknown): x is OnboardingSnapshot {
   if (!x || typeof x !== "object") return false;

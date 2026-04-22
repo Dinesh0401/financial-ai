@@ -69,7 +69,7 @@ function NavContent() {
             <Brain className="size-4" />
           </div>
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-primary">Finna</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-primary">Finzova</p>
             <h1 className="text-lg font-semibold tracking-tight leading-none">Financial Copilot</h1>
           </div>
         </div>
@@ -168,7 +168,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Brain className="size-4" />
             </div>
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-primary">Finna</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-primary">Finzova</p>
               <h1 className="text-lg font-semibold leading-none">Financial Copilot</h1>
             </div>
           </div>

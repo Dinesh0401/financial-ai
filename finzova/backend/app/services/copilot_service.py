@@ -61,6 +61,147 @@ def _is_loan_intent(message: str) -> bool:
     return any(keyword in lowered for keyword in keywords)
 
 
+def _is_expense_intent(message: str) -> bool:
+    lowered = message.lower()
+    keywords = (
+        "monthly expense",
+        "monthly expenses",
+        "expense",
+        "expenses",
+        "spending",
+        "spend",
+        "where am i spending",
+        "how much i spend",
+        "how much i spent",
+    )
+    return any(keyword in lowered for keyword in keywords)
+
+
+def _extract_snapshot_expenses(snapshot: dict | None) -> tuple[float, list[tuple[str, float]]]:
+    if not isinstance(snapshot, dict):
+        return 0.0, []
+
+    raw_expenses = snapshot.get("expenses")
+    if not isinstance(raw_expenses, dict):
+        return 0.0, []
+
+    normalized: list[tuple[str, float]] = []
+    for category, amount in raw_expenses.items():
+        try:
+            parsed = float(amount or 0)
+        except (TypeError, ValueError):
+            continue
+        if parsed > 0:
+            normalized.append((str(category), parsed))
+
+    normalized.sort(key=lambda item: item[1], reverse=True)
+    return sum(amount for _, amount in normalized), normalized
+
+
+def _build_monthly_expense_answer(*, metrics: dict, profile: dict, snapshot: dict | None) -> str:
+    monthly_income, monthly_expenses, monthly_surplus, conservative_estimate = _estimate_monthly_capacity(
+        metrics,
+        profile,
+    )
+    monthly_trends = metrics.get("monthly_trends", {}) or {}
+    trend_months = sorted(monthly_trends.keys())
+    latest_month = trend_months[-1] if trend_months else None
+    latest_expenses = (
+        float(monthly_trends.get(latest_month, {}).get("expenses", 0) or 0)
+        if latest_month
+        else 0.0
+    )
+    total_expenses = float(metrics.get("total_expenses", 0) or 0)
+
+    snapshot_total, snapshot_breakdown = _extract_snapshot_expenses(snapshot)
+
+    if monthly_expenses > 0 or latest_expenses > 0 or total_expenses > 0:
+        lines = [
+            "Here is your monthly expense view based on your current transaction data.",
+            "",
+            "**Monthly Expenses**",
+            f"- Average monthly expenses: `{_format_rupees(monthly_expenses if monthly_expenses > 0 else latest_expenses)}`",
+        ]
+
+        if latest_month and latest_expenses > 0:
+            lines.append(
+                f"- Latest month (`{latest_month}`): `{_format_rupees(latest_expenses)}`"
+            )
+
+        if monthly_income > 0:
+            lines.append(f"- Monthly income considered: `{_format_rupees(monthly_income)}`")
+            lines.append(
+                f"- Approx monthly surplus after expenses: `{_format_rupees(max(0.0, monthly_surplus))}`"
+            )
+
+        category_breakdown = metrics.get("category_breakdown", {}) or {}
+        if category_breakdown:
+            top = sorted(
+                (
+                    (str(category), float(amount or 0))
+                    for category, amount in category_breakdown.items()
+                    if float(amount or 0) > 0
+                ),
+                key=lambda item: item[1],
+                reverse=True,
+            )[:5]
+            if top:
+                lines.append("")
+                lines.append("**Top spend categories**")
+                lines.extend(
+                    [
+                        f"- {category.replace('_', ' ').title()}: `{_format_rupees(amount)}`"
+                        for category, amount in top
+                    ]
+                )
+
+        if conservative_estimate:
+            lines.append("")
+            lines.append(
+                "_Note: this monthly figure is conservative because the transaction history is still sparse._"
+            )
+
+        return "\n".join(lines)
+
+    if snapshot_total > 0:
+        lines = [
+            "Here is your monthly expense view from your onboarding data.",
+            "",
+            "**Monthly Expenses**",
+            f"- Monthly expenses (onboarding): `{_format_rupees(snapshot_total)}`",
+        ]
+
+        if monthly_income > 0:
+            projected_surplus = monthly_income - snapshot_total
+            lines.append(f"- Monthly income considered: `{_format_rupees(monthly_income)}`")
+            lines.append(
+                f"- Projected monthly surplus: `{_format_rupees(max(0.0, projected_surplus))}`"
+            )
+
+        if snapshot_breakdown:
+            lines.append("")
+            lines.append("**Top spend categories**")
+            lines.extend(
+                [
+                    f"- {category.replace('_', ' ').title()}: `{_format_rupees(amount)}`"
+                    for category, amount in snapshot_breakdown[:5]
+                ]
+            )
+
+        lines.extend(
+            [
+                "",
+                "If you upload statements, I can also show month-by-month trends and merchant-level breakdown.",
+            ]
+        )
+        return "\n".join(lines)
+
+    return (
+        "I can show your monthly expenses, but I do not have expense data yet. "
+        "Please complete onboarding expenses or upload at least one statement so I can calculate it accurately."
+    )
+
+
 def _estimate_monthly_capacity(metrics: dict, profile: dict) -> tuple[float, float, float, bool]:
     monthly_trends = metrics.get("monthly_trends", {}) or {}
     month_count = max(1, len(monthly_trends) or 1)
@@ -374,6 +515,33 @@ class CopilotService:
             if isinstance(raw_loans, list):
                 snapshot_loans = [l for l in raw_loans if isinstance(l, dict) and float(l.get("balance") or 0) > 0]
 
+        if _is_expense_intent(message):
+            final_message = _build_monthly_expense_answer(
+                metrics=metrics_dict,
+                profile=context.profile,
+                snapshot=user.onboarding_snapshot if isinstance(user.onboarding_snapshot, dict) else None,
+            )
+            yield _sse("message", {"content": final_message})
+
+            session.add(ChatMessage(user_id=user.id, session_id=conversation_id, role="user", content=message))
+            session.add(
+                ChatMessage(
+                    user_id=user.id,
+                    session_id=conversation_id,
+                    role="assistant",
+                    content=final_message,
+                    agent_reasoning={"agents": [a["agent_name"] for a in orchestrated["agents"]], "findings_count": len(orchestrated["findings"])},
+                    tools_used=[agent["agent_name"] for agent in orchestrated["agents"]],
+                )
+            )
+            await session.flush()
+
+            yield _sse("done", {
+                "session_id": conversation_id,
+                "tools_used": [agent["agent_name"] for agent in orchestrated["agents"]],
+            })
+            return
+
         if _is_loan_intent(message) and debt_ratio <= 0:
             if snapshot_loans:
                 final_message = _build_snapshot_loan_answer(snapshot_loans=snapshot_loans, profile=context.profile)
@@ -498,7 +666,7 @@ class CopilotService:
             if not fallback_parts:
                 fallback_parts.append(
                     "I've run multi-agent analysis on your financial data. "
-                    "Upload more transactions to get detailed insights from the "
+                    "Add onboarding expenses or upload transactions to get detailed insights from the "
                     "Expense, Debt, Goal, Risk, Investment, and Tax agents."
                 )
 

@@ -2,15 +2,15 @@ services:
   api:
     build:
       context: .
-      dockerfile: finna/backend/Dockerfile
+      dockerfile: finzova/backend/Dockerfile
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-    working_dir: /workspace/finna/backend
+    working_dir: /workspace/finzova/backend
     env_file:
       - .env
     environment:
-      FINNA_OCR_BACKEND: tesseract
-      FINNA_TESSERACT_CMD: /usr/bin/tesseract
-      PYTHONPATH: /workspace/finna/backend
+      FINZOVA_OCR_BACKEND: tesseract
+      FINZOVA_TESSERACT_CMD: /usr/bin/tesseract
+      PYTHONPATH: /workspace/finzova/backend
     volumes:
       - .:/workspace
     ports:
@@ -23,7 +23,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: finna
+      POSTGRES_DB: finzova
     ports:
       - "54329:5432"
     volumes:

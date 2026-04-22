@@ -63,7 +63,7 @@ export function SupportWidget() {
             </div>
             <h3 className="mt-2 text-lg font-semibold">How can we help?</h3>
             <p className="mt-1 text-xs text-muted-foreground">
-              Quick answers for using Finna and fixing common issues.
+              Quick answers for using Finzova and fixing common issues.
             </p>
           </div>
 
@@ -90,7 +90,7 @@ export function SupportWidget() {
             })}
 
             <a
-              href="mailto:support@finzova.org?subject=Finna%20support%20request"
+              href="mailto:support@finzova.org?subject=Finzova%20support%20request"
               className="flex items-center gap-3 rounded-2xl border border-primary/30 bg-primary/10 px-3 py-3 text-sm text-primary transition hover:bg-primary/15"
             >
               <Mail className="size-4" />

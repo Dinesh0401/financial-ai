@@ -1,0 +1,9 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e4]:
+    - button "Continue with Google" [ref=e5]:
+      - img
+      - text: Continue with Google
+    - button "Sign in with email" [ref=e6]:
+      - text: Sign in with email
+      - img
+  - alert [ref=e7]

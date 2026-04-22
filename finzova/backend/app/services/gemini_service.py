@@ -9,7 +9,7 @@ import httpx
 
 from app.config.settings import Settings
 
-logger = logging.getLogger("finna.gemini")
+logger = logging.getLogger("finzova.gemini")
 
 GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models"
 

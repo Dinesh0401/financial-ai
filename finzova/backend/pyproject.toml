@@ -3,9 +3,9 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "finna-backend"
+name = "finzova-backend"
 version = "0.1.0"
-description = "Finna backend foundation"
+description = "Finzova backend foundation"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [

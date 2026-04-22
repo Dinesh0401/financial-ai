@@ -24,8 +24,8 @@ os.environ.setdefault("REQUEST_TIMEOUT_SECONDS", "15")
 os.environ.setdefault("SUPABASE_URL", "https://example.supabase.co")
 os.environ.setdefault("SUPABASE_ANON_KEY", "test-anon-key")
 os.environ.setdefault("SUPABASE_SERVICE_ROLE_KEY", "test-service-role-key")
-os.environ.setdefault("TEST_DATABASE_RUNTIME_URL", "postgresql+asyncpg://postgres:postgres@localhost:54329/finna_test")
-os.environ.setdefault("TEST_DATABASE_MIGRATION_URL", "postgresql+psycopg://postgres:postgres@localhost:54329/finna_test")
+os.environ.setdefault("TEST_DATABASE_RUNTIME_URL", "postgresql+asyncpg://postgres:postgres@localhost:54329/finzova_test")
+os.environ.setdefault("TEST_DATABASE_MIGRATION_URL", "postgresql+psycopg://postgres:postgres@localhost:54329/finzova_test")
 os.environ["DATABASE_RUNTIME_URL"] = os.environ["TEST_DATABASE_RUNTIME_URL"]
 os.environ["DATABASE_MIGRATION_URL"] = os.environ["TEST_DATABASE_MIGRATION_URL"]
 

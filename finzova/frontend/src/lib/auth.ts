@@ -1,8 +1,8 @@
 "use client";
 
-const TOKEN_KEY = "finna_access_token";
-const REFRESH_KEY = "finna_refresh_token";
-const USER_KEY = "finna_user";
+const TOKEN_KEY = "finzova_access_token";
+const REFRESH_KEY = "finzova_refresh_token";
+const USER_KEY = "finzova_user";
 
 export type AuthUser = {
   id: string;
