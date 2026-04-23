@@ -910,8 +910,8 @@ class CopilotService:
                 )
 
         system_prompt = (
-            "You are Zoya, a friendly India-first money sidekick backed by 6 specialist agents. "
-            "Speak warmly in first person as Zoya. Be conversational and kind, like a helpful friend, not a robotic copilot. "
+            "You are Zova, a friendly India-first money sidekick backed by 6 specialist agents. "
+            "Speak warmly in first person as Zova. Be conversational and kind, like a helpful friend, not a robotic copilot. "
             "You have just run multiple specialist agents (expense, debt, goal, risk, investment, tax) "
             "on the user's real financial data. Use the agent findings below to give a personalized, "
             "conversational response. Be specific with numbers (use Rs). Be actionable. "
@@ -989,14 +989,56 @@ class CopilotService:
                 return
 
             # Build a meaningful fallback from agent findings when Gemini is unavailable
-            fallback_parts = []
+            fallback_parts: list[str] = []
             summary = orchestrated.get("summary", "")
             if summary and summary != "Not enough financial history is available yet to produce a strong multi-agent summary.":
                 fallback_parts.append(summary)
 
             findings = orchestrated.get("findings", [])
-            if findings:
-                fallback_parts.append("\n**Key findings from AI agents:**")
+            empty_data_hints = (
+                "no categorized",
+                "no data",
+                "not available",
+                "insights are limited",
+                "history is incomplete",
+                "spending history not available",
+                "no transactions",
+            )
+            looks_empty = any(
+                any(hint in str(f.get("detail", "")).lower() or hint in str(f.get("title", "")).lower()
+                    for hint in empty_data_hints)
+                for f in findings
+            )
+
+            # Also check snapshot + transaction state
+            snap_total_expenses, _ = _extract_snapshot_expenses(
+                user.onboarding_snapshot if isinstance(user.onboarding_snapshot, dict) else None
+            )
+            has_any_data = (
+                len(transactions) > 0
+                or snap_total_expenses > 0
+                or (isinstance(user.onboarding_snapshot, dict)
+                    and float(user.onboarding_snapshot.get("income") or 0) > 0)
+            )
+
+            if (looks_empty or not has_any_data) and not fallback_parts:
+                fallback_parts.append(
+                    "I'd love to help, but I don't have enough of your financial data yet to give a real answer. "
+                    "Give me one of these and I can get specific:\n\n"
+                    "**Quickest ways to get started**\n"
+                    "1. **Finish onboarding** on the Dashboard — add your monthly income, spends, loans and goals. Takes 2 minutes and unlocks personal answers instantly.\n"
+                    "2. **Upload a bank or UPI statement** from the Transactions page (CSV works best; for PDFs, unlock with your statement password first). I'll auto-categorize every line.\n"
+                    "3. **Add a single transaction manually** on the Transactions page if you just want to test.\n\n"
+                    "Come back and ask me the same question — I'll answer with real numbers from your data."
+                )
+            elif looks_empty:
+                fallback_parts.append(
+                    "\n**Want sharper answers?** Upload a bank/UPI statement on the Transactions page or finish onboarding expenses on the Dashboard — "
+                    "the more data I see, the more specific I can get about your spending and savings."
+                )
+
+            if findings and not looks_empty:
+                fallback_parts.append("\n**Key findings:**")
                 for f in findings[:5]:
                     title = f.get("title", "")
                     detail = f.get("detail", "")
@@ -1004,8 +1046,8 @@ class CopilotService:
                         fallback_parts.append(f"- **{title}**: {detail}")
 
             recs = orchestrated.get("recommendations", [])
-            if recs:
-                fallback_parts.append("\n**Agent recommendations:**")
+            if recs and not looks_empty:
+                fallback_parts.append("\n**What I'd do:**")
                 for r in recs[:3]:
                     title = r.get("title", "")
                     desc = r.get("description", "")
@@ -1014,9 +1056,8 @@ class CopilotService:
 
             if not fallback_parts:
                 fallback_parts.append(
-                    "I've run multi-agent analysis on your financial data. "
-                    "Add onboarding expenses or upload transactions to get detailed insights from the "
-                    "Expense, Debt, Goal, Risk, Investment, and Tax agents."
+                    "I'm here to help with your money. Add your income, spends and loans on the Dashboard "
+                    "or upload a bank statement on the Transactions page and ask me again — I'll reply with real numbers from your data."
                 )
 
             final_message = "\n".join(fallback_parts)

@@ -4,7 +4,8 @@ import * as React from "react";
 import { ChevronRight, MessageSquareQuote, Sparkles, User2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import { ZoyaAvatar } from "@/components/zoya-avatar";
+import { ZovaAvatar } from "@/components/zova-avatar";
+import { detectMood } from "@/lib/zova-mood";
 import { cn } from "@/lib/utils";
 
 export type ChatMessage = {
@@ -281,15 +282,32 @@ export function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
     );
   }
 
+  const mood = detectMood(message.content);
+  const moodLabel =
+    mood === "happy"
+      ? "Good news"
+      : mood === "concerned"
+        ? "Heads up"
+        : "Your money sidekick";
+  const moodBadgeClass =
+    mood === "happy"
+      ? "border-emerald-400/30 bg-emerald-500/10 text-emerald-300"
+      : mood === "concerned"
+        ? "border-amber-400/30 bg-amber-500/10 text-amber-300"
+        : "border-primary/20 bg-primary/10 text-primary";
+
   return (
     <article className="max-w-[96%] overflow-hidden rounded-[30px] border border-border/60 bg-card/90 shadow-[0_20px_50px_-35px_rgba(0,0,0,0.65)] backdrop-blur-xl">
       <div className="flex items-start gap-3 border-b border-border/50 px-4 py-4">
-        <ZoyaAvatar size={40} />
+        <ZovaAvatar size={40} mood={mood} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="font-medium text-foreground">Zoya</p>
-            <Badge variant="outline" className="rounded-full border-primary/20 bg-primary/10 text-[10px] uppercase tracking-[0.24em] text-primary">
-              Your money sidekick
+            <p className="font-medium text-foreground">Zova</p>
+            <Badge
+              variant="outline"
+              className={`rounded-full text-[10px] uppercase tracking-[0.24em] ${moodBadgeClass}`}
+            >
+              {moodLabel}
             </Badge>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">Personal advice pulled from your actual income, spends and loans.</p>
@@ -340,9 +358,9 @@ export function ChatThinkingCard({
   return (
     <div className="max-w-[96%] rounded-[28px] border border-primary/20 bg-gradient-to-br from-primary/10 via-background/65 to-background/35 px-4 py-4 text-sm text-foreground/90 shadow-[0_18px_45px_-35px_rgba(0,0,0,0.7)]">
       <div className="flex items-center gap-3">
-        <ZoyaAvatar size={32} thinking />
+        <ZovaAvatar size={32} mood="thinking" />
         <div className="flex flex-col">
-          <span className="text-[0.72rem] uppercase tracking-[0.24em] text-primary">Zoya is thinking…</span>
+          <span className="text-[0.72rem] uppercase tracking-[0.24em] text-primary">Zova is thinking…</span>
         </div>
       </div>
       <p className="mt-3 leading-7">{text}</p>

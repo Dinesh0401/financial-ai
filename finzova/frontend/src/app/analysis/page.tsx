@@ -157,7 +157,7 @@ export default function AnalysisPage() {
     }
     list.push({
       icon: TrendingUp,
-      title: "Ask Zoya for a custom plan",
+      title: "Ask Zova for a custom plan",
       why: "She sees your full picture and can answer specific questions about your goals, debt, and spending.",
       impact: "Personalised recommendations in seconds",
     });
@@ -316,7 +316,7 @@ export default function AnalysisPage() {
               <Link href="/chat">
                 <Button variant="outline" size="sm">
                   <Sparkles className="mr-2 size-4" />
-                  Ask Zoya
+                  Ask Zova
                 </Button>
               </Link>
             </div>

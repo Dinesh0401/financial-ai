@@ -8,7 +8,7 @@ import { useGSAP } from "@gsap/react";
 
 import { AppShell } from "@/components/app-shell";
 import { ChatMessageBubble, ChatThinkingCard } from "@/components/chat/chat-message-bubble";
-import { ZoyaAvatar } from "@/components/zoya-avatar";
+import { ZovaAvatar } from "@/components/zova-avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { API_BASE_URL } from "@/lib/api";
@@ -182,9 +182,9 @@ export default function ChatPage() {
         <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-4 pt-2">
           {isEmpty ? (
             <div data-animate="welcome" className="flex min-h-full flex-col items-center justify-center py-10 text-center">
-              <ZoyaAvatar size={72} />
+              <ZovaAvatar size={72} mood="happy" />
               <h1 className="mt-6 text-3xl font-semibold tracking-tight sm:text-4xl">
-                Hi, I'm <span className="bg-gradient-to-r from-primary to-emerald-300 bg-clip-text text-transparent">Zoya</span>. Ask me anything about your money.
+                Hi, I'm <span className="bg-gradient-to-r from-primary to-emerald-300 bg-clip-text text-transparent">Zova</span>. Ask me anything about your money.
               </h1>
               <p className="mt-3 max-w-lg text-sm leading-7 text-muted-foreground">
                 I know your income, spends, loans and goals from setup — so the answers are about you, not generic tips.
@@ -238,7 +238,7 @@ export default function ChatPage() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask Zoya anything..."
+              placeholder="Ask Zova anything..."
               className="min-h-[44px] flex-1 resize-none border-0 bg-transparent px-1 py-2 shadow-none placeholder:text-muted-foreground/70 focus-visible:ring-0"
               disabled={streaming}
               rows={1}
@@ -254,7 +254,7 @@ export default function ChatPage() {
           </div>
           <p className="mt-2 px-2 text-center text-[10px] text-muted-foreground">
             <Sparkles className="mr-1 inline size-3 text-primary" />
-            Zoya uses your own data — private, personal, no fluff
+            Zova uses your own data — private, personal, no fluff
           </p>
         </div>
       </div>

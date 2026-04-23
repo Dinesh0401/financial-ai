@@ -124,9 +124,9 @@ const STEPS: Step[] = [
   },
   {
     number: "07",
-    title: "Ask Zoya",
+    title: "Ask Zova",
     description:
-      "Zoya is your money sidekick. She knows your income, spends, loans and goals — so answers are specific to you, not generic tips.",
+      "Zova is your money sidekick. She knows your income, spends, loans and goals — so answers are specific to you, not generic tips.",
     icon: Bot,
     tips: [
       "Try: 'Where am I spending the most this month?'",
@@ -134,7 +134,7 @@ const STEPS: Step[] = [
       "Try: 'How do I pay off my highest-interest loan faster?'",
     ],
     href: "/chat",
-    cta: "Open Zoya",
+    cta: "Open Zova",
   },
 ];
 
@@ -281,7 +281,7 @@ export default function GuidePage() {
               <Link href="/chat">
                 <Button>
                   <Bot className="mr-2 size-4" />
-                  Ask Zoya
+                  Ask Zova
                 </Button>
               </Link>
             </div>

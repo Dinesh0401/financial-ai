@@ -282,7 +282,7 @@ export default function DashboardPage() {
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <Sparkles className="size-4 text-primary" />
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-primary">Zoya · your money sidekick</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-primary">Zova · your money sidekick</p>
                 </div>
                 <h2 data-animate="hero-heading" className="mt-4 text-balance text-3xl font-semibold tracking-tight text-foreground sm:text-[2.35rem]">
                   {firstName ? (

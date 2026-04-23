@@ -20,7 +20,7 @@ const navItems = [
   { href: "/analysis", label: "My Money Story", icon: BarChart3 },
   { href: "/transactions", label: "Transactions", icon: ReceiptText },
   { href: "/goals", label: "Goals", icon: Goal },
-  { href: "/chat", label: "Ask Zoya", icon: Bot },
+  { href: "/chat", label: "Ask Zova", icon: Bot },
   { href: "/guide", label: "How to Use", icon: BookOpen },
 ];
 
