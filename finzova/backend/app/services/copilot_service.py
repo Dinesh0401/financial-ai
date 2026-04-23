@@ -77,6 +77,173 @@ def _is_expense_intent(message: str) -> bool:
     return any(keyword in lowered for keyword in keywords)
 
 
+_GREETING_TOKENS = {
+    "hi", "hii", "hiii", "hiya", "hey", "heya", "hello", "helo", "hlo",
+    "yo", "sup", "howdy", "hola", "namaste", "namaskaram", "vanakkam", "vanakam",
+    "salaam", "salam", "aloha", "morning", "evening", "afternoon",
+    "gm", "gn", "ga",
+}
+
+
+def _is_greeting(message: str) -> bool:
+    lowered = message.strip().lower().rstrip("!.?")
+    if not lowered:
+        return False
+    # Strip common punctuation & short emojis
+    stripped = lowered.replace(",", " ").replace("'", "").strip()
+    words = stripped.split()
+    if len(words) <= 3:
+        for w in words:
+            if w in _GREETING_TOKENS:
+                return True
+    # Multi-word greetings
+    phrases = (
+        "good morning",
+        "good evening",
+        "good afternoon",
+        "how are you",
+        "whats up",
+        "what's up",
+        "how r u",
+        "how are u",
+        "nice to meet",
+    )
+    for p in phrases:
+        if p in stripped:
+            return True
+    return False
+
+
+def _build_greeting_reply(user: User, snapshot: dict | None) -> str:
+    first_name = None
+    if user.name:
+        first_name = user.name.split()[0]
+
+    snap_income = 0.0
+    snap_total = 0.0
+    snap_loans_count = 0
+    snap_goals_count = 0
+    if isinstance(snapshot, dict):
+        try:
+            snap_income = float(snapshot.get("income") or 0)
+        except (TypeError, ValueError):
+            snap_income = 0.0
+        snap_total, _breakdown = _extract_snapshot_expenses(snapshot)
+        raw_loans = snapshot.get("loans") or []
+        if isinstance(raw_loans, list):
+            snap_loans_count = sum(
+                1 for l in raw_loans if isinstance(l, dict) and float(l.get("balance") or 0) > 0
+            )
+        raw_goals = snapshot.get("goals") or []
+        if isinstance(raw_goals, list):
+            snap_goals_count = len(raw_goals)
+
+    opener = f"Hey {first_name}! " if first_name else "Hey there! "
+
+    if snap_income > 0 or snap_total > 0:
+        surplus = max(0.0, snap_income - snap_total)
+        context_bits = []
+        if snap_income > 0:
+            context_bits.append(f"Rs {snap_income:,.0f} income")
+        if snap_total > 0:
+            context_bits.append(f"Rs {snap_total:,.0f} monthly spend")
+        if snap_loans_count > 0:
+            context_bits.append(f"{snap_loans_count} loan{'s' if snap_loans_count > 1 else ''}")
+        if snap_goals_count > 0:
+            context_bits.append(f"{snap_goals_count} goal{'s' if snap_goals_count > 1 else ''}")
+
+        context_line = ", ".join(context_bits) if context_bits else "your profile"
+
+        body = (
+            f"I'm Zova, your money sidekick. I've already got your numbers loaded — {context_line}. "
+            f"Ask me anything and I'll answer with *your* data, not generic tips."
+        )
+        suggestions = (
+            "\n\n**Try one of these:**\n"
+            "- *Where am I spending the most this month?*\n"
+            "- *How can I reduce my biggest expense?*\n"
+            + ("- *How do I pay off my loan faster?*\n" if snap_loans_count > 0 else "")
+            + ("- *Am I on track for my goal?*\n" if snap_goals_count > 0 else "")
+            + "- *Give me a 30-second health check.*"
+        )
+        return opener + body + suggestions
+
+    return (
+        opener
+        + "I'm Zova, your money sidekick. I don't have your numbers yet — once you finish onboarding on the Dashboard or "
+        "upload a bank/UPI statement on the Transactions page, ask me anything and I'll answer with *your* data.\n\n"
+        "If you just want to chat, I can also walk you through how the app works — just say *how do I use this?*"
+    )
+
+
+def _conversational_fallback(
+    *,
+    message: str,
+    metrics: dict,
+    snapshot: dict | None,
+    orchestrated: dict,
+    has_any_data: bool,
+) -> str:
+    findings = [f for f in (orchestrated.get("findings") or []) if f.get("detail")]
+    recs = [r for r in (orchestrated.get("recommendations") or []) if r.get("description")]
+
+    empty_data_hints = (
+        "no categorized",
+        "no data",
+        "not available",
+        "insights are limited",
+        "history is incomplete",
+        "spending history not available",
+        "no transactions",
+    )
+    looks_empty = any(
+        any(hint in str(f.get("detail", "")).lower() or hint in str(f.get("title", "")).lower()
+            for hint in empty_data_hints)
+        for f in findings
+    )
+
+    if not has_any_data or looks_empty:
+        return (
+            "I'd love to give you a real answer, but I don't have enough of your data yet to back it up. "
+            "Two ways to fix that fast:\n\n"
+            "1. Finish onboarding on the Dashboard — it's a 2-minute setup and unlocks personal answers straight away.\n"
+            "2. Or upload a bank/UPI statement from the Transactions page and I'll auto-categorize every line.\n\n"
+            "Once either is done, come back and ask me the same question — I'll answer with real numbers from your data."
+        )
+
+    # Build a conversational response from 1-2 findings + 1 rec
+    opener_phrases = {
+        "expense": "Looking at your spending — ",
+        "debt": "On your loan side — ",
+        "goal": "About your goals — ",
+        "risk": "Here's the risk picture — ",
+        "investment": "On the investing side — ",
+        "tax": "On the tax side — ",
+    }
+
+    lines: list[str] = []
+    primary = findings[0] if findings else None
+    if primary:
+        title_lower = str(primary.get("title", "")).lower()
+        opener = next((v for k, v in opener_phrases.items() if k in title_lower), "Short version — ")
+        lines.append(f"{opener}{primary.get('detail', '').rstrip('.')}.")
+    if len(findings) > 1:
+        second = findings[1]
+        lines.append(f"Also worth knowing: {second.get('detail', '').rstrip('.')}.")
+
+    if recs:
+        top_rec = recs[0]
+        action = str(top_rec.get("description", "")).rstrip(".")
+        if action:
+            lines.append(f"\n**What I'd do first:** {action}.")
+
+    lines.append(
+        "\nWant me to dig deeper into any of these, or help you plan the next step?"
+    )
+
+    return "\n\n".join(lines) if len(lines) > 2 else " ".join(lines)
+
+
 def _is_reduce_intent(message: str) -> bool:
     lowered = message.lower()
     phrases = (
@@ -795,6 +962,32 @@ class CopilotService:
             if isinstance(raw_loans, list):
                 snapshot_loans = [l for l in raw_loans if isinstance(l, dict) and float(l.get("balance") or 0) > 0]
 
+        if _is_greeting(message):
+            final_message = _build_greeting_reply(
+                user,
+                user.onboarding_snapshot if isinstance(user.onboarding_snapshot, dict) else None,
+            )
+            yield _sse("message", {"content": final_message})
+
+            session.add(ChatMessage(user_id=user.id, session_id=conversation_id, role="user", content=message))
+            session.add(
+                ChatMessage(
+                    user_id=user.id,
+                    session_id=conversation_id,
+                    role="assistant",
+                    content=final_message,
+                    agent_reasoning={"agents": [a["agent_name"] for a in orchestrated["agents"]], "findings_count": len(orchestrated["findings"])},
+                    tools_used=[agent["agent_name"] for agent in orchestrated["agents"]],
+                )
+            )
+            await session.flush()
+
+            yield _sse("done", {
+                "session_id": conversation_id,
+                "tools_used": [agent["agent_name"] for agent in orchestrated["agents"]],
+            })
+            return
+
         if _is_reduce_intent(message):
             final_message = _build_reduction_plan(
                 snapshot=user.onboarding_snapshot if isinstance(user.onboarding_snapshot, dict) else None,
@@ -988,29 +1181,7 @@ class CopilotService:
                 })
                 return
 
-            # Build a meaningful fallback from agent findings when Gemini is unavailable
-            fallback_parts: list[str] = []
-            summary = orchestrated.get("summary", "")
-            if summary and summary != "Not enough financial history is available yet to produce a strong multi-agent summary.":
-                fallback_parts.append(summary)
-
-            findings = orchestrated.get("findings", [])
-            empty_data_hints = (
-                "no categorized",
-                "no data",
-                "not available",
-                "insights are limited",
-                "history is incomplete",
-                "spending history not available",
-                "no transactions",
-            )
-            looks_empty = any(
-                any(hint in str(f.get("detail", "")).lower() or hint in str(f.get("title", "")).lower()
-                    for hint in empty_data_hints)
-                for f in findings
-            )
-
-            # Also check snapshot + transaction state
+            # Build a conversational fallback from agent findings when Gemini is unavailable
             snap_total_expenses, _ = _extract_snapshot_expenses(
                 user.onboarding_snapshot if isinstance(user.onboarding_snapshot, dict) else None
             )
@@ -1021,46 +1192,13 @@ class CopilotService:
                     and float(user.onboarding_snapshot.get("income") or 0) > 0)
             )
 
-            if (looks_empty or not has_any_data) and not fallback_parts:
-                fallback_parts.append(
-                    "I'd love to help, but I don't have enough of your financial data yet to give a real answer. "
-                    "Give me one of these and I can get specific:\n\n"
-                    "**Quickest ways to get started**\n"
-                    "1. **Finish onboarding** on the Dashboard — add your monthly income, spends, loans and goals. Takes 2 minutes and unlocks personal answers instantly.\n"
-                    "2. **Upload a bank or UPI statement** from the Transactions page (CSV works best; for PDFs, unlock with your statement password first). I'll auto-categorize every line.\n"
-                    "3. **Add a single transaction manually** on the Transactions page if you just want to test.\n\n"
-                    "Come back and ask me the same question — I'll answer with real numbers from your data."
-                )
-            elif looks_empty:
-                fallback_parts.append(
-                    "\n**Want sharper answers?** Upload a bank/UPI statement on the Transactions page or finish onboarding expenses on the Dashboard — "
-                    "the more data I see, the more specific I can get about your spending and savings."
-                )
-
-            if findings and not looks_empty:
-                fallback_parts.append("\n**Key findings:**")
-                for f in findings[:5]:
-                    title = f.get("title", "")
-                    detail = f.get("detail", "")
-                    if detail:
-                        fallback_parts.append(f"- **{title}**: {detail}")
-
-            recs = orchestrated.get("recommendations", [])
-            if recs and not looks_empty:
-                fallback_parts.append("\n**What I'd do:**")
-                for r in recs[:3]:
-                    title = r.get("title", "")
-                    desc = r.get("description", "")
-                    if desc:
-                        fallback_parts.append(f"- **{title}**: {desc}")
-
-            if not fallback_parts:
-                fallback_parts.append(
-                    "I'm here to help with your money. Add your income, spends and loans on the Dashboard "
-                    "or upload a bank statement on the Transactions page and ask me again — I'll reply with real numbers from your data."
-                )
-
-            final_message = "\n".join(fallback_parts)
+            final_message = _conversational_fallback(
+                message=message,
+                metrics=metrics_dict,
+                snapshot=user.onboarding_snapshot if isinstance(user.onboarding_snapshot, dict) else None,
+                orchestrated=orchestrated,
+                has_any_data=has_any_data,
+            )
             yield _sse("message", {"content": final_message})
 
         # Save to DB
