@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { BookOpen, Bot, HelpCircle, Mail, MessageCircleQuestion, Upload, X } from "lucide-react";
 
+import { ZovaAvatar } from "@/components/zova-avatar";
 import { cn } from "@/lib/utils";
 
 type Topic = {
@@ -51,17 +52,33 @@ export function SupportWidget() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        aria-label={open ? "Close help" : "Open help"}
+        aria-label={open ? "Close Ask Zova" : "Open Ask Zova"}
         className={cn(
-          "fixed bottom-20 right-4 z-[90] flex size-14 items-center justify-center rounded-full border border-primary/40 bg-primary text-primary-foreground shadow-[0_18px_45px_-12px_rgba(0,0,0,0.7)] transition hover:scale-105 sm:bottom-5 sm:right-5",
-          open && "bg-background text-foreground",
+          "group fixed bottom-5 right-5 z-[90] flex items-center gap-2.5 rounded-full border border-primary/40 px-2 py-2 shadow-[0_18px_45px_-12px_rgba(0,0,0,0.75)] backdrop-blur-md transition hover:scale-[1.03]",
+          open
+            ? "bg-background/95 text-foreground"
+            : "bg-gradient-to-br from-emerald-500/95 via-primary/90 to-emerald-600/90 text-primary-foreground",
         )}
       >
-        {open ? <X className="size-5" /> : <Bot className="size-6" />}
+        {open ? (
+          <>
+            <span className="flex size-9 items-center justify-center rounded-full bg-foreground/10">
+              <X className="size-4" />
+            </span>
+            <span className="pr-3 text-sm font-semibold">Close</span>
+          </>
+        ) : (
+          <>
+            <ZovaAvatar size={36} mood="happy" glow={false} />
+            <span className="pr-3 text-sm font-semibold tracking-wide text-white drop-shadow-[0_1px_0_rgba(0,0,0,0.25)]">
+              Ask Zova
+            </span>
+          </>
+        )}
       </button>
 
       {open && (
-        <div className="fixed bottom-[9rem] right-4 z-[90] w-[min(380px,calc(100vw-2rem))] overflow-hidden rounded-3xl border border-border/70 bg-card/95 shadow-[0_28px_60px_-20px_rgba(0,0,0,0.8)] backdrop-blur-xl sm:right-5 sm:bottom-[5.5rem]">
+        <div className="fixed bottom-[5.5rem] right-5 z-[90] w-[min(380px,calc(100vw-2.5rem))] overflow-hidden rounded-3xl border border-border/70 bg-card/95 shadow-[0_28px_60px_-20px_rgba(0,0,0,0.8)] backdrop-blur-xl">
           <div className="border-b border-border/60 bg-gradient-to-br from-primary/20 via-primary/10 to-transparent px-5 py-4">
             <div className="flex items-center gap-2 text-primary">
               <Bot className="size-4" />
