@@ -210,9 +210,7 @@ function TopBar() {
           </div>
 
           <div className="ml-auto flex items-center gap-2">
-            <div className="hidden sm:block">
-              <SupportWidget variant="navbar" />
-            </div>
+            <SupportWidget variant="navbar" />
             <div className="hidden lg:block">
               <LogoutButton compact />
             </div>

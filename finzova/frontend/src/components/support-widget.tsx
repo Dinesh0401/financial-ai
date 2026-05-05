@@ -58,15 +58,15 @@ export function SupportWidget({ variant = "navbar" }: SupportWidgetProps) {
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? "Close Ask Zova" : "Open Ask Zova"}
         className={cn(
-          "group inline-flex items-center gap-2 rounded-full border transition",
+          "group inline-flex items-center gap-2 rounded-full border transition shadow-[0_8px_24px_-12px_rgba(16,185,129,0.55)]",
           variant === "floating"
-            ? "fixed bottom-5 right-5 z-[90] gap-2.5 border-primary/40 px-2 py-2 shadow-[0_18px_45px_-12px_rgba(0,0,0,0.75)] backdrop-blur-md hover:scale-[1.03]"
-            : "border-primary/35 px-2 py-1 hover:border-primary/55",
+            ? "fixed bottom-5 right-5 z-[90] gap-2.5 border-primary/40 px-2 py-2 backdrop-blur-md hover:scale-[1.03]"
+            : "border-primary/55 px-2 py-1.5 hover:border-primary/80 hover:scale-[1.02]",
           open
             ? "bg-background/95 text-foreground"
             : variant === "floating"
               ? "bg-gradient-to-br from-emerald-500/95 via-primary/90 to-emerald-600/90 text-primary-foreground"
-              : "bg-gradient-to-br from-primary/20 via-primary/10 to-transparent text-foreground",
+              : "bg-gradient-to-br from-emerald-500 via-primary to-emerald-600 text-primary-foreground",
         )}
       >
         {open ? (
@@ -78,13 +78,11 @@ export function SupportWidget({ variant = "navbar" }: SupportWidgetProps) {
           </>
         ) : (
           <>
-            <ZovaAvatar size={variant === "floating" ? 36 : 26} mood="happy" glow={false} />
+            <ZovaAvatar size={variant === "floating" ? 36 : 30} mood="happy" glow={false} />
             <span
               className={cn(
-                "font-semibold tracking-wide",
-                variant === "floating"
-                  ? "pr-3 text-sm text-white drop-shadow-[0_1px_0_rgba(0,0,0,0.25)]"
-                  : "pr-2 text-xs text-foreground",
+                "font-semibold tracking-wide text-white drop-shadow-[0_1px_0_rgba(0,0,0,0.25)]",
+                variant === "floating" ? "pr-3 text-sm" : "pr-3 text-sm",
               )}
             >
               Ask Zova
