@@ -16,12 +16,12 @@ export function StoryNav({ current }: { current: StoryStep }) {
   const isLast = idx === ORDER.length - 1;
 
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="mx-auto grid w-full max-w-2xl grid-cols-2 gap-3">
       <Button
         variant="outline"
         onClick={() => prev && router.push(`/analysis?step=${prev}`)}
         disabled={!prev}
-        className="w-full justify-center gap-2 sm:w-auto"
+        className="min-h-11 w-full justify-center gap-2 px-4 py-2.5 text-sm"
       >
         <ArrowLeft className="size-4" />
         {prev ? `Back: ${labelFor(prev)}` : "Start"}
@@ -30,7 +30,7 @@ export function StoryNav({ current }: { current: StoryStep }) {
       {isLast ? (
         <Button
           onClick={() => router.push("/dashboard")}
-          className="w-full justify-center gap-2 sm:w-auto"
+          className="min-h-11 w-full justify-center gap-2 px-4 py-2.5 text-sm"
         >
           <LayoutDashboard className="size-4" />
           Open my dashboard
@@ -38,7 +38,7 @@ export function StoryNav({ current }: { current: StoryStep }) {
       ) : (
         <Button
           onClick={() => next && router.push(`/analysis?step=${next}`)}
-          className="w-full justify-center gap-2 sm:w-auto"
+          className="min-h-11 w-full justify-center gap-2 px-4 py-2.5 text-sm"
         >
           Next: {next ? labelFor(next) : ""}
           <ArrowRight className="size-4" />
