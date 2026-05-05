@@ -31,7 +31,6 @@ import {
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 
-import { SupportWidget } from "@/components/support-widget";
 import { isAuthenticated } from "@/lib/auth";
 import { createGoal, updateCurrentUser } from "@/lib/api";
 import { fetchOnboardingSnapshot, persistOnboardingSnapshot } from "@/lib/ai/engine";
@@ -1192,8 +1191,6 @@ export default function OnboardingPage() {
           </Link>
         </div>
       </div>
-
-      <SupportWidget />
     </div>
   );
 }
