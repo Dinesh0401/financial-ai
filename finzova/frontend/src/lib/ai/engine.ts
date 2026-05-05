@@ -579,28 +579,53 @@ export function generateAiSummary(data: OnboardingSnapshot): AiSummary {
 
   const diagnostics: DiagnosticSignal[] = [
     {
-      label: "Savings rate",
-      value: `${savingsPct}% (benchmark ≥20%)`,
+      label: "How much you save",
+      value:
+        savingsPct >= 20
+          ? `${savingsPct}% of income — that's healthy`
+          : savingsPct >= 10
+            ? `${savingsPct}% of income — try to push past 20%`
+            : `${savingsPct}% of income — too low, aim for 20%`,
       verdict: savingsPct >= 20 ? verdict("good") : savingsPct >= 10 ? verdict("watch") : verdict("bad"),
     },
     {
-      label: "EMI burden",
-      value: `${emiPct}% of income (benchmark ≤30%)`,
+      label: "EMI load",
+      value:
+        emiPct <= 30
+          ? `${emiPct}% of income — comfortable`
+          : emiPct <= 50
+            ? `${emiPct}% of income — getting tight`
+            : `${emiPct}% of income — too heavy`,
       verdict: emiPct <= 30 ? verdict("good") : emiPct <= 50 ? verdict("watch") : verdict("bad"),
     },
     {
-      label: "Expense ratio",
-      value: `${expensePct}% of income (benchmark ≤60%)`,
+      label: "How much you spend",
+      value:
+        expensePct <= 60
+          ? `${expensePct}% of income — well managed`
+          : expensePct <= 80
+            ? `${expensePct}% of income — bit high`
+            : `${expensePct}% of income — way too high`,
       verdict: expensePct <= 60 ? verdict("good") : expensePct <= 80 ? verdict("watch") : verdict("bad"),
     },
     {
-      label: "Debt load",
-      value: m.debt > 0 ? `${debtX.toFixed(1)}× monthly income` : "No active loans",
+      label: "Total debt",
+      value:
+        m.debt === 0
+          ? "No loans — debt-free"
+          : debtX <= 6
+            ? `${debtX.toFixed(1)} months of income owed — manageable`
+            : `${debtX.toFixed(1)} months of income owed — heavy`,
       verdict: m.debt === 0 ? verdict("good") : debtX <= 6 ? verdict("watch") : verdict("bad"),
     },
     {
-      label: "Peer percentile",
-      value: `${b.percentileVsPeers}th (savings-rate benchmark)`,
+      label: "Vs people like you",
+      value:
+        b.percentileVsPeers >= 60
+          ? `Better than ${b.percentileVsPeers} of 100 — top end`
+          : b.percentileVsPeers >= 30
+            ? `Around the middle of ${b.percentileVsPeers} of 100`
+            : `Behind most — ${b.percentileVsPeers} of 100`,
       verdict:
         b.percentileVsPeers >= 60 ? verdict("good") : b.percentileVsPeers >= 30 ? verdict("watch") : verdict("bad"),
     },
@@ -610,18 +635,18 @@ export function generateAiSummary(data: OnboardingSnapshot): AiSummary {
     .slice(0, 3)
     .map((r) =>
       r.impactMonthly > 0
-        ? `${r.title} — frees ₹${r.impactMonthly.toLocaleString("en-IN")}/mo`
+        ? `${r.title} — saves you ₹${r.impactMonthly.toLocaleString("en-IN")}/month`
         : r.title,
     );
 
   const headline =
     b.riskLevel === "strong"
-      ? `Score ${b.overall}/100 — you're in the ${b.percentileVsPeers}th percentile. Compound the momentum.`
+      ? `Score ${b.overall}/100 — you're doing well. Better than ${b.percentileVsPeers} out of 100 people. Keep it up.`
       : b.riskLevel === "stable"
-        ? `Score ${b.overall}/100 — stable, but ${diagnostics.filter((d) => d.verdict !== "good").length} signals need action.`
+        ? `Score ${b.overall}/100 — okay, but ${diagnostics.filter((d) => d.verdict !== "good").length} things need a fix.`
         : b.riskLevel === "at_risk"
-          ? `Score ${b.overall}/100 — at risk. Address the top ${Math.min(3, recs.length)} actions first.`
-          : `Score ${b.overall}/100 — critical. Savings ${savingsPct}% and EMI ${emiPct}% signal financial stress.`;
+          ? `Score ${b.overall}/100 — needs attention. Start with the top ${Math.min(3, recs.length)} actions below.`
+          : `Score ${b.overall}/100 — concerning. Saving only ${savingsPct}% and EMIs at ${emiPct}% is too risky. Let's fix this.`;
 
   return {
     headline,

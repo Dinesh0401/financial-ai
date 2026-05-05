@@ -3,13 +3,14 @@
 import { useRef, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, BookOpen, Bot, Brain, Goal, LayoutDashboard, LogOut, Menu, ReceiptText, Sparkles } from "lucide-react";
+import { BarChart3, BookOpen, Bot, Goal, LayoutDashboard, LogOut, Menu, ReceiptText } from "lucide-react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { SupportWidget } from "@/components/support-widget";
+import { ZovaAvatar } from "@/components/zova-avatar";
 import { cn } from "@/lib/utils";
 import { clearSession, getStoredUser } from "@/lib/auth";
 
@@ -64,17 +65,16 @@ function NavContent() {
   return (
     <div ref={navRef} className="flex h-full min-h-0 flex-col gap-6 overflow-y-auto rounded-[28px] border border-border/70 bg-sidebar/80 p-5 surface-glow backdrop-blur-xl">
       <div data-animate="nav-logo">
-        <div className="flex items-center gap-2">
-          <div className="flex size-8 items-center justify-center rounded-xl bg-primary/15 text-primary ring-1 ring-primary/30">
-            <Brain className="size-4" />
-          </div>
-          <div>
+        <div className="flex items-center gap-3">
+          <ZovaAvatar size={42} mood="happy" />
+          <div className="min-w-0">
             <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-primary">Finzova</p>
-            <h1 className="text-lg font-semibold tracking-tight leading-none">Your money sidekick</h1>
+            <h1 className="text-base font-semibold tracking-tight leading-tight">Hi, I&apos;m Zova</h1>
+            <p className="text-xs leading-snug text-muted-foreground">your money buddy</p>
           </div>
         </div>
         <p className="mt-3 text-xs leading-5 text-muted-foreground">
-          Personal money advice built on your real income, spends and goals.
+          I look at your money and tell you what to do next, in plain English.
         </p>
       </div>
       <nav className="flex flex-col gap-1">
@@ -102,15 +102,20 @@ function NavContent() {
         })}
       </nav>
       <div className="mt-auto space-y-3" data-animate="nav-footer">
-        <div className="rounded-2xl border border-primary/25 bg-primary/10 p-4 text-sm">
-          <div className="flex items-center gap-2">
-            <Sparkles className="size-4 text-primary" />
-            <p className="font-medium text-primary">Rule-based pipeline</p>
+        <Link
+          href="/chat"
+          className="group block rounded-2xl border border-primary/25 bg-gradient-to-br from-primary/15 via-primary/10 to-transparent p-4 transition hover:border-primary/40 hover:from-primary/25"
+        >
+          <div className="flex items-center gap-3">
+            <ZovaAvatar size={36} mood="happy" glow={false} />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-foreground">Need help?</p>
+              <p className="text-xs leading-snug text-muted-foreground">
+                Ask me anything about your money &rarr;
+              </p>
+            </div>
           </div>
-          <p className="mt-2 text-xs leading-5 text-muted-foreground">
-            Expense · Debt · Risk · Goal · Investment · Orchestrator — deterministic scoring on your snapshot.
-          </p>
-        </div>
+        </Link>
         <LogoutButton />
       </div>
     </div>
@@ -164,12 +169,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="mb-4 flex items-center justify-between lg:hidden">
           <div className="flex items-center gap-2">
-            <div className="flex size-8 items-center justify-center rounded-xl bg-primary/15 text-primary ring-1 ring-primary/30">
-              <Brain className="size-4" />
-            </div>
+            <ZovaAvatar size={36} mood="happy" />
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-primary">Finzova</p>
-              <h1 className="text-lg font-semibold leading-none">Your money sidekick</h1>
+              <h1 className="text-base font-semibold leading-none">Hi, I&apos;m Zova</h1>
             </div>
           </div>
           <Sheet>

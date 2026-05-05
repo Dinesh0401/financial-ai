@@ -292,24 +292,24 @@ export default function DashboardPage() {
                   )}
                 </h2>
                 <p className="mt-3 max-w-2xl text-sm leading-7 text-muted-foreground">
-                  This is the income, spends and loans you entered during setup. Scroll down for a full picture and simple tips.
+                  Here's where your money stands this month. Scroll down for the full story and what to do next.
                 </p>
                 <div className="mt-6 grid gap-3 sm:grid-cols-3">
                   <div className="rounded-2xl border border-border/50 bg-background/40 p-3">
                     <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-                      <ArrowUpRight className="size-3.5 text-emerald-300" /> Income
+                      <ArrowUpRight className="size-3.5 text-emerald-300" /> You earn
                     </div>
                     <p className="mt-2 text-lg font-semibold text-foreground">₹{incomeAmt.toLocaleString("en-IN")}</p>
                   </div>
                   <div className="rounded-2xl border border-border/50 bg-background/40 p-3">
                     <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-                      <ArrowDownRight className="size-3.5 text-rose-300" /> Expenses
+                      <ArrowDownRight className="size-3.5 text-rose-300" /> You spend
                     </div>
                     <p className="mt-2 text-lg font-semibold text-foreground">₹{expenseAmt.toLocaleString("en-IN")}</p>
                   </div>
                   <div className="rounded-2xl border border-primary/30 bg-primary/10 p-3">
                     <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-primary">
-                      <PiggyBank className="size-3.5" /> Saves · {savingsPct}%
+                      <PiggyBank className="size-3.5" /> You save · {savingsPct}%
                     </div>
                     <p className="mt-2 text-lg font-semibold text-foreground">₹{savingsAmt.toLocaleString("en-IN")}</p>
                   </div>
@@ -418,7 +418,7 @@ export default function DashboardPage() {
               <ArrowDownRight className="size-4 text-primary" />
               <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-primary">Spending</p>
             </div>
-            <CardTitle className="mt-1 text-lg">Where your money flows</CardTitle>
+            <CardTitle className="mt-1 text-lg">Where your money goes</CardTitle>
           </CardHeader>
           <CardContent>
             {Object.keys(spendingBreakdown).length > 0 ? (
