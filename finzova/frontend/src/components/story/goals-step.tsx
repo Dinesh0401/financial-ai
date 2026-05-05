@@ -55,7 +55,7 @@ export function GoalsStep({ snapshot }: { snapshot: OnboardingSnapshot }) {
 
   return (
     <section className="space-y-5">
-      <div className="rounded-3xl border border-border/60 bg-gradient-to-br from-primary/15 via-card/70 to-card/60 p-6 ring-1 ring-primary/30">
+      <div className="rounded-[28px] border border-border/65 bg-gradient-to-br from-primary/20 via-card/80 to-card/60 p-6 shadow-[0_26px_55px_-38px_rgba(0,0,0,0.85)] ring-1 ring-primary/25">
         <p className="text-[11px] uppercase tracking-[0.28em] text-primary">Page 4 · Your goals & future</p>
         <h2 className="mt-2 text-3xl font-semibold tracking-tight text-foreground sm:text-[2.2rem]">
           Where you&apos;ll be in 5 years
@@ -65,7 +65,7 @@ export function GoalsStep({ snapshot }: { snapshot: OnboardingSnapshot }) {
         </p>
 
         <div className="mt-5 grid gap-3 sm:grid-cols-3">
-          <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-4">
+          <div className="rounded-2xl border border-emerald-400/30 bg-gradient-to-br from-emerald-500/12 to-emerald-500/5 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
             <p className="text-[10px] uppercase tracking-[0.18em] text-emerald-300">You&apos;ll have saved</p>
             <p className="mt-1 text-2xl font-bold text-foreground">
               ₹{fiveYearSave.toLocaleString("en-IN")}
@@ -74,7 +74,7 @@ export function GoalsStep({ snapshot }: { snapshot: OnboardingSnapshot }) {
               at ₹{monthlySavings.toLocaleString("en-IN")}/mo · 12% growth
             </p>
           </div>
-          <div className="rounded-2xl border border-amber-400/25 bg-amber-500/5 p-4">
+          <div className="rounded-2xl border border-amber-400/30 bg-gradient-to-br from-amber-500/12 to-amber-500/4 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
             <p className="text-[10px] uppercase tracking-[0.18em] text-amber-300">Loans cleared</p>
             <p className="mt-1 text-2xl font-bold text-foreground">
               {debtFreeBy
@@ -87,7 +87,7 @@ export function GoalsStep({ snapshot }: { snapshot: OnboardingSnapshot }) {
                 : "You're debt-free today"}
             </p>
           </div>
-          <div className="rounded-2xl border border-primary/30 bg-primary/10 p-4">
+          <div className="rounded-2xl border border-primary/35 bg-gradient-to-br from-primary/16 to-primary/6 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
             <p className="text-[10px] uppercase tracking-[0.18em] text-primary">Closer to</p>
             <p className="mt-1 text-2xl font-bold text-foreground">
               {topGoal ? topGoal.name ?? topGoal.type : "Your goals"}
@@ -117,25 +117,33 @@ export function GoalsStep({ snapshot }: { snapshot: OnboardingSnapshot }) {
             return (
               <div
                 key={i}
-                className="rounded-3xl border border-border/60 bg-card/70 p-5 backdrop-blur-xl"
+                className="relative overflow-hidden rounded-[26px] border border-border/65 bg-gradient-to-br from-card/90 via-card/75 to-card/55 p-5 shadow-[0_18px_40px_-26px_rgba(0,0,0,0.8)] backdrop-blur-xl"
               >
-                <div className="flex flex-wrap items-center gap-2">
-                  <Target className="size-4 text-primary" />
-                  <p className="text-base font-semibold text-foreground">
-                    {goal.name ?? goal.type}
-                  </p>
-                  <span className="rounded-full border border-border/40 bg-background/40 px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-                    ₹{goal.targetAmount.toLocaleString("en-IN")} · {goal.years} year{goal.years === 1 ? "" : "s"}
-                  </span>
+                <div className="pointer-events-none absolute right-0 top-0 size-28 -translate-y-1/2 translate-x-1/3 rounded-full bg-primary/10 blur-3xl" />
+                <div className="relative z-10 flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex size-8 items-center justify-center rounded-xl bg-primary/18 text-primary ring-1 ring-primary/30">
+                      <Target className="size-4" />
+                    </div>
+                    <p className="text-base font-semibold text-foreground">{goal.name ?? goal.type}</p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="rounded-full border border-border/40 bg-background/45 px-2.5 py-0.5 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                      ₹{goal.targetAmount.toLocaleString("en-IN")} · {goal.years} year{goal.years === 1 ? "" : "s"}
+                    </span>
+                    <span className="rounded-full border border-primary/35 bg-primary/10 px-2.5 py-0.5 text-[10px] uppercase tracking-[0.18em] text-primary">
+                      Need ₹{monthlyNeeded.toLocaleString("en-IN")}/mo
+                    </span>
+                  </div>
                 </div>
 
-                <div className="mt-3 grid gap-3 sm:grid-cols-[180px_1fr]">
-                  <div className="rounded-2xl border border-border/40 bg-background/30 p-3 text-center">
+                <div className="relative z-10 mt-3 grid gap-3 sm:grid-cols-[180px_1fr]">
+                  <div className="rounded-2xl border border-border/45 bg-background/35 p-3 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
                     <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Chance</p>
                     <p className="mt-1 text-3xl font-bold text-foreground">
                       {goalProb <= 1 ? "Just started" : `${goalProb}%`}
                     </p>
-                    <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/5">
+                    <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-white/5">
                       <div
                         className={`h-full rounded-full ${
                           goalProb >= 70
@@ -150,7 +158,7 @@ export function GoalsStep({ snapshot }: { snapshot: OnboardingSnapshot }) {
                   </div>
 
                   {isUnrealistic ? (
-                    <div className="rounded-2xl border border-amber-400/30 bg-amber-500/10 p-3">
+                    <div className="rounded-2xl border border-amber-400/35 bg-gradient-to-br from-amber-500/14 to-amber-500/7 p-3">
                       <p className="text-sm font-semibold text-foreground">
                         Hard in {goal.years} year{goal.years === 1 ? "" : "s"} — here&apos;s how to actually do it
                       </p>
@@ -194,7 +202,7 @@ export function GoalsStep({ snapshot }: { snapshot: OnboardingSnapshot }) {
                       )}
                     </div>
                   ) : (
-                    <div className="rounded-2xl border border-emerald-400/25 bg-emerald-500/5 p-3">
+                    <div className="rounded-2xl border border-emerald-400/30 bg-gradient-to-br from-emerald-500/12 to-emerald-500/5 p-3">
                       <p className="text-sm font-medium text-foreground">
                         Save ₹{monthlyNeeded.toLocaleString("en-IN")}/month to hit it on time
                       </p>

@@ -15,7 +15,7 @@ import { GoalsStep } from "@/components/story/goals-step";
 import { HealthStep } from "@/components/story/health-step";
 import { LoanStep } from "@/components/story/loan-step";
 import { StoryNav } from "@/components/story/story-nav";
-import { StoryStepper, type StoryStep } from "@/components/story/story-stepper";
+import { type StoryStep } from "@/components/story/story-stepper";
 import { isAuthenticated } from "@/lib/auth";
 import { fetchOnboardingSnapshot, type OnboardingSnapshot } from "@/lib/ai/engine";
 
@@ -96,7 +96,6 @@ function AnalysisStory() {
 
   return (
     <div className="space-y-5">
-      <StoryStepper current={step} />
       <div ref={stepRef}>
         {step === "health" && <HealthStep snapshot={snapshot} />}
         {step === "expenses" && <ExpenseStep snapshot={snapshot} />}

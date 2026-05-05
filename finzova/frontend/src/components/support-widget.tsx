@@ -53,7 +53,7 @@ export function SupportWidget() {
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? "Close help" : "Open help"}
         className={cn(
-          "fixed bottom-5 right-5 z-50 flex size-14 items-center justify-center rounded-full border border-primary/40 bg-primary text-primary-foreground shadow-[0_18px_45px_-12px_rgba(0,0,0,0.7)] transition hover:scale-105",
+          "fixed bottom-4 right-4 z-[80] flex size-14 items-center justify-center rounded-full border border-primary/40 bg-primary text-primary-foreground shadow-[0_18px_45px_-12px_rgba(0,0,0,0.7)] transition hover:scale-105 sm:bottom-5 sm:right-5",
           open && "bg-background text-foreground",
         )}
       >
@@ -61,7 +61,7 @@ export function SupportWidget() {
       </button>
 
       {open && (
-        <div className="fixed bottom-24 right-5 z-50 w-[min(360px,calc(100vw-2.5rem))] overflow-hidden rounded-3xl border border-border/70 bg-card/95 shadow-[0_28px_60px_-20px_rgba(0,0,0,0.8)] backdrop-blur-xl">
+        <div className="fixed bottom-[5.5rem] right-4 z-[80] w-[min(380px,calc(100vw-2rem))] overflow-hidden rounded-3xl border border-border/70 bg-card/95 shadow-[0_28px_60px_-20px_rgba(0,0,0,0.8)] backdrop-blur-xl sm:right-5">
           <div className="border-b border-border/60 bg-gradient-to-br from-primary/20 via-primary/10 to-transparent px-5 py-4">
             <div className="flex items-center gap-2 text-primary">
               <Bot className="size-4" />
