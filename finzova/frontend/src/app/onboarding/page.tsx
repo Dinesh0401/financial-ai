@@ -25,7 +25,6 @@ import {
   Tv,
   Utensils,
   Wallet,
-  Zap,
 } from "lucide-react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
@@ -49,7 +48,6 @@ type ExpenseData = {
   rent_housing: string;
   food_dining: string;
   transport: string;
-  utilities: string;
   emi_loan: string;
   entertainment: string;
   shopping: string;
@@ -462,7 +460,6 @@ function StepExpenses({
     { key: "rent_housing", label: "Rent / Housing", icon: Home, required: true },
     { key: "food_dining", label: "Food & Dining", icon: Utensils, required: true },
     { key: "transport", label: "Transport", icon: Train, required: true },
-    { key: "utilities", label: "Utilities", icon: Zap, required: true },
     { key: "emi_loan", label: "EMI / Loan Payment", icon: CreditCard, required: true },
     { key: "entertainment", label: "Entertainment", icon: Tv, required: false },
     { key: "shopping", label: "Shopping", icon: ShoppingBag, required: false },
@@ -801,7 +798,6 @@ export default function OnboardingPage() {
     rent_housing: "",
     food_dining: "",
     transport: "",
-    utilities: "",
     emi_loan: "",
     entertainment: "",
     shopping: "",
@@ -840,7 +836,6 @@ export default function OnboardingPage() {
         rent_housing: e.rent_housing != null ? String(e.rent_housing) : "",
         food_dining: e.food_dining != null ? String(e.food_dining) : "",
         transport: e.transport != null ? String(e.transport) : "",
-        utilities: e.utilities != null ? String(e.utilities) : "",
         emi_loan: e.emi_loan != null ? String(e.emi_loan) : "",
         entertainment: e.entertainment != null ? String(e.entertainment) : "",
         shopping: e.shopping != null ? String(e.shopping) : "",
@@ -896,7 +891,6 @@ export default function OnboardingPage() {
         "rent_housing",
         "food_dining",
         "transport",
-        "utilities",
         "emi_loan",
       ];
       const missing = requiredKeys.filter((k) => !expenses[k].trim());
@@ -999,7 +993,6 @@ export default function OnboardingPage() {
           rent_housing: parseNum(expenses.rent_housing),
           food_dining: parseNum(expenses.food_dining),
           transport: parseNum(expenses.transport),
-          utilities: parseNum(expenses.utilities),
           emi_loan: parseNum(expenses.emi_loan),
           entertainment: parseNum(expenses.entertainment),
           shopping: parseNum(expenses.shopping),
