@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Banknote,
@@ -12,6 +13,7 @@ import {
   ChevronRight,
   CreditCard,
   GraduationCap,
+  Bot,
   Heart,
   Home,
   Loader2,
@@ -29,7 +31,7 @@ import {
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 
-import { StoryTabs } from "@/components/story/story-tabs";
+import { SupportWidget } from "@/components/support-widget";
 import { isAuthenticated } from "@/lib/auth";
 import { createGoal, updateCurrentUser } from "@/lib/api";
 import { fetchOnboardingSnapshot, persistOnboardingSnapshot } from "@/lib/ai/engine";
@@ -396,7 +398,7 @@ function StepIncome({
       <div className="grid gap-4 md:grid-cols-2">
         <FieldGroup
           icon={Wallet}
-          label="Salary (Net)"
+          label="Salary (Monthly)"
           value={data.salary}
           onChange={(v) => onChange({ ...data, salary: v })}
           placeholder="e.g. 80000"
@@ -1079,10 +1081,6 @@ export default function OnboardingPage() {
         <div className="absolute inset-0 opacity-[0.34]" style={{ backgroundImage: "linear-gradient(rgba(34,197,94,0.09) 1px, transparent 1px), linear-gradient(90deg, rgba(34,197,94,0.09) 1px, transparent 1px)", backgroundSize: "56px 56px", maskImage: "radial-gradient(circle at center, black 34%, transparent 92%)" }} />
       </div>
 
-      <div className="relative z-10 w-full max-w-[1600px] px-4 pt-6 sm:px-6 lg:px-8">
-        <StoryTabs currentStep={null} />
-      </div>
-
       <div className="relative z-10 w-full max-w-3xl px-4 py-12">
         {/* Title */}
         <div data-animate="title" className="mb-10 text-center">
@@ -1183,8 +1181,19 @@ export default function OnboardingPage() {
         <p data-animate="footer" className="mt-6 text-center text-xs text-white/25">
           Stored securely against your account · deterministic analysis, no ML model.
         </p>
+
+        <div className="mt-4 flex justify-center">
+          <Link
+            href="/chat"
+            className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-2 text-sm font-medium text-primary transition hover:bg-primary/20"
+          >
+            <Bot className="size-4" />
+            Ask Zova
+          </Link>
+        </div>
       </div>
 
+      <SupportWidget />
     </div>
   );
 }
