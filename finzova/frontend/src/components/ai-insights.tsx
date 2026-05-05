@@ -95,6 +95,12 @@ function subScoreBar(score: number): string {
   return "bg-red-400";
 }
 
+function humanizeCategory(key: string): string {
+  return key
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 function relativeTime(iso: string): string | null {
   const t = Date.parse(iso);
   if (!Number.isFinite(t) || t <= 0) return null;
@@ -312,11 +318,27 @@ export function AIInsights({ fallback }: Props) {
   const topLoan = [...data.loans].sort((a, b) => b.interest - a.interest)[0];
   const loanOpt = topLoan ? optimizeLoan(topLoan) : null;
   const foodSpend = data.expenses.food_dining ?? data.expenses.food ?? 0;
-  const subscriptionSpend = (data.expenses.entertainment ?? 0) + (data.expenses.subscriptions ?? 0);
+  const expenseEntries = Object.entries(data.expenses)
+    .filter(([, amount]) => amount > 0)
+    .map(([key, amount]) => ({ key, amount, name: humanizeCategory(key) }))
+    .sort((a, b) => b.amount - a.amount);
+  const topNonFoodSpend = expenseEntries.find(
+    (item) => item.key !== "food_dining" && item.key !== "food" && item.key !== "emi_loan",
+  );
+  const topNonFoodReductionFactor = topNonFoodSpend
+    ? topNonFoodSpend.key === "rent_housing" || topNonFoodSpend.key === "rent"
+      ? 0.9
+      : topNonFoodSpend.key === "healthcare" || topNonFoodSpend.key === "education"
+        ? 0.9
+        : 0.7
+    : 0.7;
+  const topNonFoodSpendNow = topNonFoodSpend?.amount ?? 0;
+  const topNonFoodSpendTarget = topNonFoodSpendNow > 0
+    ? Math.round(topNonFoodSpendNow * topNonFoodReductionFactor)
+    : 0;
   const foodTarget = foodSpend > 0 ? Math.round(foodSpend * 0.6) : 0;
-  const subscriptionTarget = subscriptionSpend > 0 ? Math.round(subscriptionSpend * 0.43) : 0;
   const totalSavingsCreated =
-    Math.max(0, foodSpend - foodTarget) + Math.max(0, subscriptionSpend - subscriptionTarget);
+    Math.max(0, foodSpend - foodTarget) + Math.max(0, topNonFoodSpendNow - topNonFoodSpendTarget);
   const essentialMonthly = Math.max(
     0,
     (data.expenses.rent_housing ?? data.expenses.rent ?? 0) +
@@ -330,11 +352,13 @@ export function AIInsights({ fallback }: Props) {
   const emergencyGap = Math.max(0, emergencyRequired - emergencyCurrent);
   const emergencyBuildMonths =
     monthlySavings > 0 ? Math.ceil(emergencyGap / Math.max(1, monthlySavings)) : null;
-  const actionSip = monthlySavings >= 2000 ? 2000 : monthlySavings >= 500 ? Math.floor(monthlySavings / 500) * 500 : 0;
-  const expenseChartData = Object.entries(data.expenses)
-    .map(([k, v]) => ({ name: k.replace(/_/g, " "), value: v }))
-    .filter((e) => e.value > 0)
-    .sort((a, b) => b.value - a.value);
+  const sipSeed = Math.min(Math.max(0, monthlySavings), Math.max(0, data.income * 0.2));
+  const actionSip = sipSeed >= 500 ? Math.floor(sipSeed / 500) * 500 : Math.floor(sipSeed / 100) * 100;
+  const forecastActions = recos
+    .filter((r) => r.impactMonthly > 0 && r.severity !== "info")
+    .slice(0, 3);
+  const extraMonthlyFromPlan = Math.max(0, forecast.improved.monthlySavings - forecast.baseline.monthlySavings);
+  const expenseChartData = expenseEntries.map((e) => ({ name: e.name, value: e.amount }));
   const gameLevel =
     data.loans.length === 0 && score >= 80
       ? "Debt-Free Hero"
@@ -481,6 +505,10 @@ export function AIInsights({ fallback }: Props) {
                 const needed = Math.ceil(topGoal.targetAmount / (topGoal.years * 12));
                 const shortfall = Math.max(0, needed - monthlySavings);
                 const isUnrealistic = data.income > 0 && needed > data.income;
+                const requiredIncomeForTimeline = expenses + emi + needed;
+                const incomeGapForTimeline = Math.max(0, requiredIncomeForTimeline - data.income);
+                const suggestedIncomeTarget = Math.ceil(requiredIncomeForTimeline / 1000) * 1000;
+                const suggestedPartTime = incomeGapForTimeline > 0 ? Math.ceil(incomeGapForTimeline / 500) * 500 : 0;
                 const feasibleYears = data.income > 0
                   ? Math.ceil(topGoal.targetAmount / (Math.max(monthlySavings, data.income * 0.2) * 12))
                   : null;
@@ -509,6 +537,18 @@ export function AIInsights({ fallback }: Props) {
                           ? `Save ₹${needed.toLocaleString("en-IN")}/mo to hit it (you're short by ₹${shortfall.toLocaleString("en-IN")}/mo today).`
                           : `You're on track — keep saving ₹${monthlySavings.toLocaleString("en-IN")}/mo.`}
                       </p>
+                    )}
+                    {incomeGapForTimeline > 0 && (
+                      <div className="mt-3 rounded-xl border border-sky-400/30 bg-sky-500/10 p-3 text-[11px] leading-5 text-sky-100">
+                        <p className="font-semibold">How to finish this goal in time</p>
+                        <p className="mt-1">
+                          To manage current expenses + EMIs and this goal, you need about ₹{suggestedIncomeTarget.toLocaleString("en-IN")}/month income.
+                          You are short by ₹{incomeGapForTimeline.toLocaleString("en-IN")}/month.
+                          {suggestedPartTime > 0
+                            ? ` Try part-time/freelance income of ₹${suggestedPartTime.toLocaleString("en-IN")}/month or a salary increase to the same level.`
+                            : " Keep current income and increase savings discipline."}
+                        </p>
+                      </div>
                     )}
                   </>
                 );
@@ -587,9 +627,9 @@ export function AIInsights({ fallback }: Props) {
               </span>
             </div>
             <div className="flex items-center justify-between rounded-xl border border-border/50 bg-background/35 px-3 py-2">
-              <span>Subscriptions</span>
+              <span>{topNonFoodSpend?.name ?? "Next highest spend"}</span>
               <span className="font-medium">
-                ₹{subscriptionSpend.toLocaleString("en-IN")} → ₹{subscriptionTarget.toLocaleString("en-IN")}
+                ₹{topNonFoodSpendNow.toLocaleString("en-IN")} → ₹{topNonFoodSpendTarget.toLocaleString("en-IN")}
               </span>
             </div>
             <div className="rounded-xl border border-emerald-400/30 bg-emerald-500/10 px-3 py-2 text-emerald-100">
@@ -725,16 +765,32 @@ export function AIInsights({ fallback }: Props) {
             <p className="mt-1 text-xs text-emerald-200">
               That&apos;s ₹{forecast.improved.delta.toLocaleString("en-IN")} extra over 12 months
             </p>
-            {forecast.improved.unlockedActions.length > 0 && (
-              <ul className="mt-3 space-y-1 text-xs text-muted-foreground">
-                {forecast.improved.unlockedActions.map((a, i) => (
-                  <li key={i} className="flex gap-2">
-                    <span className="mt-1 size-1 shrink-0 rounded-full bg-emerald-400" />
-                    <span>{a}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
+            <p className="mt-1 text-xs text-emerald-200">
+              Monthly saving goes from ₹{Math.max(0, forecast.baseline.monthlySavings).toLocaleString("en-IN")} to ₹{Math.max(0, forecast.improved.monthlySavings).toLocaleString("en-IN")}
+              {" "}({extraMonthlyFromPlan.toLocaleString("en-IN")} extra per month).
+            </p>
+            <div className="mt-3 rounded-xl border border-emerald-400/20 bg-emerald-500/10 p-3">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-200">
+                How to reach this optimized plan
+              </p>
+              {forecastActions.length > 0 ? (
+                <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
+                  {forecastActions.map((a, i) => (
+                    <li key={i} className="flex gap-2">
+                      <span className="mt-1 size-1 shrink-0 rounded-full bg-emerald-400" />
+                      <span>{a.title} (+₹{a.impactMonthly.toLocaleString("en-IN")}/month)</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Follow the action list below to raise your monthly savings.
+                </p>
+              )}
+            </div>
+            <p className="mt-2 text-xs text-emerald-200">
+              Suggested SIP amount: {actionSip > 0 ? `₹${actionSip.toLocaleString("en-IN")}/month` : "Start with ₹500/month and increase gradually"}.
+            </p>
           </div>
         </div>
       </div>
