@@ -1,9 +1,9 @@
 "use client";
 
-import { useRef, useSyncExternalStore } from "react";
+import { useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, BookOpen, Bot, Goal, LayoutDashboard, LogOut, Menu, ReceiptText } from "lucide-react";
+import { BarChart3, BookOpen, Bot, ChevronLeft, ChevronRight, Goal, LayoutDashboard, LogOut, Menu, ReceiptText } from "lucide-react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 
@@ -148,6 +148,7 @@ function LogoutButton() {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const mainRef = useRef<HTMLElement>(null);
+  const [isDesktopNavOpen, setIsDesktopNavOpen] = useState(true);
 
   useGSAP(
     () => {
@@ -163,8 +164,34 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-[1600px] items-start gap-6 px-4 py-4 sm:px-6 lg:px-8">
-      <aside className="hidden w-[320px] shrink-0 lg:sticky lg:top-4 lg:block lg:h-[calc(100vh-2rem)]">
-        <NavContent />
+      <aside
+        className={cn(
+          "hidden shrink-0 lg:sticky lg:top-4 lg:h-[calc(100vh-2rem)]",
+          isDesktopNavOpen ? "lg:block lg:w-[320px]" : "lg:flex lg:w-[52px] lg:items-start lg:justify-center",
+        )}
+      >
+        {isDesktopNavOpen ? (
+          <div className="relative h-full">
+            <button
+              type="button"
+              onClick={() => setIsDesktopNavOpen(false)}
+              aria-label="Close sidebar"
+              className="absolute -right-3 top-6 z-20 hidden size-8 items-center justify-center rounded-full border border-border/70 bg-card text-muted-foreground transition hover:text-foreground lg:flex"
+            >
+              <ChevronLeft className="size-4" />
+            </button>
+            <NavContent />
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setIsDesktopNavOpen(true)}
+            aria-label="Open sidebar"
+            className="mt-4 flex size-10 items-center justify-center rounded-full border border-border/70 bg-card text-muted-foreground transition hover:text-foreground"
+          >
+            <ChevronRight className="size-4" />
+          </button>
+        )}
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="mb-4 flex items-center justify-between lg:hidden">
