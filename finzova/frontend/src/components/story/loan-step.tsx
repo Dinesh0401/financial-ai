@@ -24,6 +24,72 @@ const PAYOFF_TIPS: string[] = [
   "Don't take new credit cards or BNPL while clearing existing loans — interest piles up faster than savings grow.",
 ];
 
+function normalizedLoanType(type: string | undefined): string {
+  return (type ?? "").trim().toLowerCase();
+}
+
+function getLoanPayoffTips(loan: OnboardingLoan): string[] {
+  const type = normalizedLoanType(loan.type);
+
+  if (type.includes("credit card")) {
+    return [
+      "Freeze this card for new spends until the balance is zero.",
+      "Pay more than the minimum every month so the statement balance actually shrinks.",
+      "If the APR is painful, move the balance to a lower-rate option and close the original card fast.",
+    ];
+  }
+
+  if (type.includes("gold")) {
+    return [
+      "Treat this as a short bridge loan and close it with any bonus, tax refund, or sale proceeds.",
+      "Avoid renewals or rollovers unless absolutely necessary.",
+      "Make a little extra principal payment each month so the pledged gold is released sooner.",
+    ];
+  }
+
+  if (type.includes("home")) {
+    return [
+      "Keep the EMI on autopay, then send bonuses or salary hikes straight to principal.",
+      "Ask the bank for a rate reset or tenure reduction when rates fall.",
+      "Don't rush to overpay this before higher-interest debt is gone.",
+    ];
+  }
+
+  if (type.includes("personal")) {
+    return [
+      "Put extra principal toward this loan on the same day your salary lands.",
+      "Ask the lender for a lower rate if you have a clean repayment history.",
+      "Close it before taking any new EMI.",
+    ];
+  }
+
+  if (type.includes("car")) {
+    return [
+      "Keep the EMI steady and send any spare cash to principal.",
+      "Don't roll accessories or insurance into a fresh refinance.",
+      "Close it early once your higher-rate debt is gone.",
+    ];
+  }
+
+  if (type.includes("education")) {
+    return [
+      "Use any tax refund or bonus to make lump-sum principal payments.",
+      "Keep interest from capitalising if your lender allows prepayment.",
+      "Once income grows, step up the EMI instead of stretching the tenure.",
+    ];
+  }
+
+  if (type.includes("two-wheeler") || type.includes("two wheeler") || type.includes("bike")) {
+    return [
+      "Add a small extra payment each month and close it fast.",
+      "Avoid extending the tenure for gadgets or accessories.",
+      "Redirect that EMI to your next goal after it closes.",
+    ];
+  }
+
+  return PAYOFF_TIPS;
+}
+
 export function LoanStep({ snapshot }: { snapshot: OnboardingSnapshot }) {
   const loans = snapshot.loans || [];
   const debt = totalDebt(loans);
@@ -113,6 +179,7 @@ export function LoanStep({ snapshot }: { snapshot: OnboardingSnapshot }) {
           const opt = optimizeLoan(loan);
           const isTop = i === 0 && ranked.length > 1;
           const eta = opt && Number.isFinite(opt.currentMonths) ? addMonthsToToday(opt.currentMonths) : null;
+          const payoffTips = getLoanPayoffTips(loan);
           return (
             <div
               key={i}
@@ -170,6 +237,22 @@ export function LoanStep({ snapshot }: { snapshot: OnboardingSnapshot }) {
                   </p>
                 </div>
               )}
+
+              <div className="mt-3 rounded-2xl border border-border/40 bg-background/25 p-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                  Tailored payoff steps
+                </p>
+                <ol className="mt-2 space-y-2 text-xs leading-5 text-foreground/85">
+                  {payoffTips.map((step, tipIndex) => (
+                    <li key={tipIndex} className="flex gap-2">
+                      <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[10px] font-bold text-primary">
+                        {tipIndex + 1}
+                      </span>
+                      <span>{step}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
             </div>
           );
         })}

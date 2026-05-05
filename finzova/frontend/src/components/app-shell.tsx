@@ -2,8 +2,9 @@
 
 import { useRef, useSyncExternalStore } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
+  ArrowLeft,
   BarChart3,
   BookOpen,
   Goal,
@@ -166,7 +167,18 @@ function MobileMenu({ pathname }: { pathname: string }) {
 
 function TopBar() {
   const pathname = usePathname();
+  const router = useRouter();
   const headerRef = useRef<HTMLElement>(null);
+  const showBackButton = pathname.startsWith("/chat");
+
+  function handleBack() {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+      return;
+    }
+
+    router.push("/dashboard");
+  }
 
   useGSAP(
     () => {
@@ -194,6 +206,20 @@ function TopBar() {
     >
       <div className="rounded-[28px] border border-border/70 bg-background/85 px-4 py-3 shadow-[0_18px_45px_-30px_rgba(0,0,0,0.7)] backdrop-blur-xl sm:px-5">
         <div className="flex items-center gap-3">
+          {showBackButton && (
+            <button
+              type="button"
+              onClick={handleBack}
+              data-animate="nav-link"
+              aria-label="Go back"
+              title="Go back"
+              className="inline-flex shrink-0 items-center gap-2 rounded-full border border-border/60 bg-background/60 px-3 py-1.5 text-sm font-medium text-foreground transition hover:border-primary/40 hover:text-primary"
+            >
+              <ArrowLeft className="size-4" />
+              <span className="whitespace-nowrap">Back</span>
+            </button>
+          )}
+
           <Link href="/dashboard" data-animate="nav-logo" className="flex shrink-0 items-center gap-2">
             <ZovaAvatar size={38} mood="happy" />
             <div className="hidden min-w-0 sm:block">
@@ -211,10 +237,10 @@ function TopBar() {
               href="/chat"
               data-animate="nav-link"
               aria-label="Ask Zova"
-              className="group inline-flex items-center gap-2 rounded-full border border-primary/55 bg-gradient-to-br from-emerald-500 via-primary to-emerald-600 px-2 py-1.5 shadow-[0_8px_24px_-12px_rgba(16,185,129,0.55)] transition hover:scale-[1.02] hover:border-primary/80"
+              className="group inline-flex min-w-fit shrink-0 items-center gap-2 rounded-full border border-primary/55 bg-gradient-to-br from-emerald-500 via-primary to-emerald-600 px-3 py-1.5 shadow-[0_8px_24px_-12px_rgba(16,185,129,0.55)] transition hover:scale-[1.02] hover:border-primary/80"
             >
               <ZovaAvatar size={30} mood="happy" glow={false} />
-              <span className="pr-3 text-sm font-semibold tracking-wide text-white drop-shadow-[0_1px_0_rgba(0,0,0,0.25)]">
+              <span className="whitespace-nowrap pr-3 text-sm font-semibold tracking-wide text-white drop-shadow-[0_1px_0_rgba(0,0,0,0.25)]">
                 Ask Zova
               </span>
             </Link>

@@ -1,0 +1,255 @@
+FINZOVA — CHANGES LOG (this session)
+=====================================
+Repo: https://github.com/Dinesh0401/financial-ai
+Branch: main
+
+-------------------------------------------------
+COMMITS PUSHED (newest first)
+-------------------------------------------------
+fbca384  feat(chat): make Zova reply like a human, not a dashboard
+92a6ecb  feat: rename Zoya to Zova, add avatar mood reactions, and friendlier empty-data guidance
+c632a8b  revert: move frontend back to finzova/frontend
+44b5bf7  chore: move frontend to finna/frontend to match Vercel Root Directory
+8d96199  feat(chat): tell users exactly when each loan will be paid off
+178aae6  feat: rename AI Copilot to Zoya with animated avatar
+163d6cd  feat(chat): answer 'how can I reduce it' with India-specific per-category tips
+232d813  feat: add Other goal type, chance-of-hitting UX, and snapshot-aware loan payoff chat
+
+
+=================================================
+FEEDBACK FIXES
+=================================================
+
+1.1  "Other" goal type added
+     Files: finzova/frontend/src/app/goals/page.tsx
+            finzova/frontend/src/app/onboarding/page.tsx
+     What:  GOAL_TYPES now ends with { value: "other", label: "Other" }
+            so users can pick Other when none of the 9 preset types fit.
+
+1.2  Goal card no longer shows "0.0% completion"
+     Files: finzova/frontend/src/app/goals/page.tsx (~line 411)
+     What:  When success_probability <= 1 it now reads "Just started"
+            and shows "Save Rs X/mo to get there on time" underneath,
+            instead of a demoralizing 0.0%. Label renamed from
+            "Success probability" to "Chance of hitting it".
+
+1.3  AI chat now answers loan-payoff questions
+     Files: finzova/backend/app/services/copilot_service.py
+     What:  For users with no bank transactions yet but loans in
+            onboarding, Zova now builds an avalanche payoff plan
+            (highest-rate first) with:
+             - loan balance, rate, EMI, months to close
+             - EMI bump projection (EMI x1.2 -> closes N months earlier)
+             - totals (outstanding debt + monthly EMI)
+             - 3 next steps
+            Before: "No active loan detected" (wrong answer).
+
+1.4  AI chat now answers "How can I reduce it?"
+     Files: finzova/backend/app/services/copilot_service.py
+     What:  Added _is_reduce_intent detector (matches: "how can i reduce",
+            "cut down", "save more", "trim my", "spend less", etc.)
+            that runs BEFORE the expense-intent check.
+            Returns a plan for the user's top 3 snapshot categories with:
+             - current spend + share of total
+             - 15% cut target in rupees/month
+             - 2 India-specific tips per category pulled from a 17-category
+               tip library (food, rent, transport, shopping, entertainment,
+               utilities, EMI, groceries, healthcare, insurance, etc.)
+             - combined monthly save + 12-month compound total
+             - closing CTA: pick one category, plan it weekly
+
+1.5  Snapshot injected into Gemini system prompt
+     Files: finzova/backend/app/services/copilot_service.py
+     What:  Even fuzzy follow-ups ("trim my budget", "what should I focus on")
+            now get grounded answers because Gemini sees a snapshot block
+            with income, total expenses, EMI total, and top 6 categories.
+
+1.6  "Tell users when each loan will be paid off"
+     Files: finzova/backend/app/services/copilot_service.py (commit 8d96199)
+     What:  Each loan now shows an ETA date + total interest remaining
+            in addition to months to close.
+
+=================================================
+2. ZOVA PERSONA + ANIMATED AVATAR
+=================================================
+
+2.1  Renamed AI Copilot -> Zoya -> Zova
+     Final name: Zova (tighter tie to Fin-ZOVA brand)
+     Files: every "Copilot"/"Zoya" reference across:
+             - finzova/frontend/src/app/chat/page.tsx
+             - finzova/frontend/src/app/dashboard/page.tsx
+             - finzova/frontend/src/app/analysis/page.tsx
+             - finzova/frontend/src/app/guide/page.tsx
+             - finzova/frontend/src/components/ai-insights.tsx
+             - finzova/frontend/src/components/app-shell.tsx
+             - finzova/frontend/src/components/chat/chat-message-bubble.tsx
+             - finzova/frontend/src/components/support-widget.tsx
+             - finzova/backend/app/services/copilot_service.py (system prompt)
+     Nav label: "AI Copilot" -> "Ask Zova"
+     Subtitle:  "Financial Copilot" -> "Your money sidekick"
+
+2.2  Custom animated SVG avatar
+     File:  finzova/frontend/src/components/zova-avatar.tsx (NEW)
+     Stack: GSAP + inline SVG with radialGradient body + dashed rotating ring
+     Idle animations:
+      - breathing scale pulse (2.4s yoyo)
+      - gentle up-down float (3s yoyo)
+      - blink loop every ~3.5s (both eyes squint 0.08s -> open 0.12s)
+      - rotating dashed ring (12s linear)
+      - yellow sparkle pulsing top-right (1.6s yoyo)
+
+2.3  Four mood states with full facial reactions
+     File:  finzova/frontend/src/components/zova-avatar.tsx
+     Moods:
+      - IDLE       : default gentle smile curve, cheek blush 0.55 opacity
+                     emerald body gradient
+      - HAPPY      : wider curvier smile, eye squint (scaleY 0.55),
+                     raised brows, brighter cheek blush, light-green body,
+                     sparkle animates in both corners,
+                     elastic rotation on body
+      - CONCERNED  : flat/frown mouth curve, raised inner brows,
+                     eyes wider, amber/warm body gradient,
+                     subtle head shake (x -1.2 -> +1.2, 3 yoyo cycles),
+                     pulsing exclamation sparkle
+      - THINKING   : eyes dart side-to-side (0.7s yoyo),
+                     neutral mouth curve, raised brows
+
+2.4  Mood detection utility
+     File:  finzova/frontend/src/lib/zova-mood.ts (NEW)
+     How:   Scans message content for 20+ concern keywords
+            (critical, overload, at risk, below benchmark, please upload,
+             cannot afford, shortfall, emergency fund gap, ...)
+            and 18+ happy keywords
+            (on track, great, strong, healthy, debt-free, ahead of schedule,
+             comfortable, plenty of room, ...).
+            Returns "concerned" | "happy" | "idle".
+     Used:  In ChatMessageBubble — each assistant message computes its
+            own mood and passes it to ZovaAvatar.
+
+2.5  Colored badge next to Zova's name
+     File:  finzova/frontend/src/components/chat/chat-message-bubble.tsx
+     What:  Badge now shows one of three states matching mood:
+             - "Good news"        (emerald) when happy
+             - "Heads up"         (amber)   when concerned
+             - "Your money sidekick" (primary) when idle
+            Visual cue reinforces the tone of the answer.
+
+
+=================================================
+3. HUMAN-LIKE CHAT (latest commit fbca384)
+=================================================
+
+3.1  Greeting intent handler
+     File:  finzova/backend/app/services/copilot_service.py
+     What:  "Hi", "Hello", "Hey", "Namaste", "Vanakkam", "Good morning",
+            "How are you", "sup", "yo" etc. NO LONGER trigger a full
+            agent analysis report.
+            Instead returns a warm personalized greeting:
+             "Hey Dinesh! I'm Zova, your money sidekick. I've already got
+              your numbers loaded — Rs 60,000 income, Rs 37,560 monthly
+              spend, 1 loan, 1 goal. Ask me anything and I'll answer with
+              *your* data, not generic tips."
+            + 4 suggested starter questions
+            If no data: warm hello + upload primer.
+     Runs before ALL other intent checks.
+
+3.2  Conversational fallback (replaces dashboard dump)
+     File:  finzova/backend/app/services/copilot_service.py
+     Before:
+            "**Key findings from AI agents:**
+             - Goal inventory: 1 active goals are being tracked.
+             - Goals at risk: ...
+             - Emergency fund gap: ...
+             - Low savings rate: ..."
+     After (prose):
+            "About your goals — these have below 50% success probability
+             and need attention: House.
+
+             Also worth knowing: your reserve covers only 0.0 months.
+             The recommended minimum is 6 months of essential expenses
+             (approx Rs 225,361).
+
+             **What I'd do first:** Either increase monthly savings towards
+             at-risk goals or extend the timeline.
+
+             Want me to dig deeper into any of these, or help you plan
+             the next step?"
+
+3.3  Empty-data warm primer
+     File:  finzova/backend/app/services/copilot_service.py
+     What:  When user has no data (no transactions + no snapshot),
+            Zova replies:
+             "I'd love to give you a real answer, but I don't have enough
+              of your data yet to back it up. Two ways to fix that fast:
+              1. Finish onboarding on the Dashboard (2 min)
+              2. Or upload a bank/UPI statement from the Transactions page
+              Once either is done, come back and ask me the same question
+              — I'll answer with real numbers from your data."
+            This triggers the avatar's concerned/amber mood.
+
+
+=================================================
+4. CHAT PAGE UX IMPROVEMENTS
+=================================================
+
+4.1  Welcome screen
+     File:  finzova/frontend/src/app/chat/page.tsx
+     Was:   Bot icon + "How can I help with your money today?"
+            "I'm your AI Copilot, powered by 6 specialist agents..."
+     Now:   Animated happy ZovaAvatar (72px) +
+            "Hi, I'm Zova. Ask me anything about your money."
+            "I know your income, spends, loans and goals from setup —
+             so the answers are about you, not generic tips.
+             Try a simple question like 'where am I spending the most?'
+             and then 'how can I reduce it?'"
+
+4.2  Starter prompts reordered for demo flow
+     File:  finzova/frontend/src/app/chat/page.tsx
+     Now (6 prompts):
+      1. Where am I spending the most this month?     (Shobika's example)
+      2. How can I reduce my biggest expense?          (Shobika's follow-up)
+      3. How do I pay off my highest-interest loan faster?
+      4. Am I saving enough for my house goal?
+      5. What tax savings am I missing?
+      6. Give me a 30-second financial health check.
+
+4.3  Placeholder + footer copy
+     Was:   "Message your AI Copilot..."
+            "Powered by 6 autonomous AI agents..."
+     Now:   "Ask Zova anything..."
+            "Zova uses your own data — private, personal, no fluff"
+
+4.4  Thinking card
+     File:  finzova/frontend/src/components/chat/chat-message-bubble.tsx
+     Was:   Pulsing green dot + "THINKING"
+     Now:   Thinking ZovaAvatar (eyes darting) + "Zova is thinking..."
+
+
+=================================================
+5. DEPLOY CONFIG NOTE
+=================================================
+
+Vercel Project Settings > Root Directory was still pointing at
+"finna/frontend" after the rename. User updated it to
+"finzova/frontend" in the dashboard and redeployed commit 8d96199,
+which is now live (deployment 6E7G9honv = Current).
+
+Folder path remains: finzova/frontend (frontend) + finzova/backend (backend).
+Render backend uses render.yaml rootDir: finzova/backend (unchanged).
+
+
+=================================================
+HOW TO DEMO FOR VIVA
+=================================================
+
+1. Open chat page -> see the happy animated Zova avatar
+2. Type "Hi" -> warm personalized greeting (no robotic report)
+3. Click "Where am I spending the most this month?" -> top categories list
+4. Click "How can I reduce my biggest expense?" -> India-specific tips with
+   rupee savings + 12-month compound total
+5. Click "How do I pay off my highest-interest loan faster?" -> avalanche plan
+   with ETA date per loan
+6. Ask a risky question like "Am I at risk of default?" -> Zova's face turns
+   concerned (amber glow, flat mouth, head shake) + "Heads up" badge
+7. Ask a positive question like "Am I on track?" -> face turns happy
+   (wider smile, squinted eyes, sparkles) + "Good news" badge

@@ -650,78 +650,84 @@ function StepGoals({
         </p>
       </div>
 
-      {goals.map((goal) => (
-        <div
-          key={goal.id}
-          className="relative space-y-3 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5"
-        >
-          <button
-            type="button"
-            onClick={() => removeGoal(goal.id)}
-            className="absolute right-3 top-3 rounded-lg p-1.5 text-white/20 transition-colors hover:bg-white/5 hover:text-red-400"
-          >
-            <Trash2 className="size-4" />
-          </button>
+      {goals.map((goal) => {
+        const isWeddingGoal = goal.type === "wedding";
+        const timelineLabel = isWeddingGoal ? "When are you planning the wedding?" : "When do you want it? (years)";
+        const timelinePlaceholder = isWeddingGoal ? "2" : "5";
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            <FieldGroup
-              icon={Target}
-              label="Goal Name"
-              value={goal.name}
-              onChange={(v) => updateGoal(goal.id, { name: v })}
-              placeholder="e.g. House Downpayment"
-              kind="text"
-              required
-              showRequiredError={showErrors}
-            />
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium tracking-wide text-white/50">Priority</label>
-              <Dropdown
-                value={goal.priority}
-                onChange={(v) => updateGoal(goal.id, { priority: v })}
-                options={[
-                  { value: "high", label: "High Priority" },
-                  { value: "medium", label: "Medium Priority" },
-                  { value: "low", label: "Low Priority" },
-                ]}
+        return (
+          <div
+            key={goal.id}
+            className="relative space-y-3 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5"
+          >
+            <button
+              type="button"
+              onClick={() => removeGoal(goal.id)}
+              className="absolute right-3 top-3 rounded-lg p-1.5 text-white/20 transition-colors hover:bg-white/5 hover:text-red-400"
+            >
+              <Trash2 className="size-4" />
+            </button>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <FieldGroup
+                icon={Target}
+                label="Goal Name"
+                value={goal.name}
+                onChange={(v) => updateGoal(goal.id, { name: v })}
+                placeholder="e.g. House Downpayment"
+                kind="text"
+                required
+                showRequiredError={showErrors}
               />
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium tracking-wide text-white/50">Priority</label>
+                <Dropdown
+                  value={goal.priority}
+                  onChange={(v) => updateGoal(goal.id, { priority: v })}
+                  options={[
+                    { value: "high", label: "High Priority" },
+                    { value: "medium", label: "Medium Priority" },
+                    { value: "low", label: "Low Priority" },
+                  ]}
+                />
+              </div>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <FieldGroup
+                icon={Banknote}
+                label="Target Amount"
+                value={goal.target}
+                onChange={(v) => updateGoal(goal.id, { target: v })}
+                placeholder="500000"
+                prefix="₹"
+                required
+                showRequiredError={showErrors}
+              />
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium tracking-wide text-white/50">Goal Type</label>
+                <Dropdown
+                  value={goal.type}
+                  onChange={(v) => updateGoal(goal.id, { type: v })}
+                  options={GOAL_TYPES.map((t) => ({ value: t.value, label: t.label }))}
+                />
+              </div>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <FieldGroup
+                icon={Target}
+                label={timelineLabel}
+                value={goal.years}
+                onChange={(v) => updateGoal(goal.id, { years: v })}
+                placeholder={timelinePlaceholder}
+                kind="number"
+                required
+                showRequiredError={showErrors}
+              />
+              <div className="hidden sm:block" />
             </div>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <FieldGroup
-              icon={Banknote}
-              label="Target Amount"
-              value={goal.target}
-              onChange={(v) => updateGoal(goal.id, { target: v })}
-              placeholder="500000"
-              prefix="₹"
-              required
-              showRequiredError={showErrors}
-            />
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium tracking-wide text-white/50">Goal Type</label>
-              <Dropdown
-                value={goal.type}
-                onChange={(v) => updateGoal(goal.id, { type: v })}
-                options={GOAL_TYPES.map((t) => ({ value: t.value, label: t.label }))}
-              />
-            </div>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <FieldGroup
-              icon={Target}
-              label="When do you want it? (years)"
-              value={goal.years}
-              onChange={(v) => updateGoal(goal.id, { years: v })}
-              placeholder="5"
-              kind="number"
-              required
-              showRequiredError={showErrors}
-            />
-            <div className="hidden sm:block" />
-          </div>
-        </div>
-      ))}
+        );
+      })}
 
       <button
         type="button"
