@@ -1065,7 +1065,7 @@ export default function OnboardingPage() {
         }
       }
 
-      router.replace("/dashboard");
+      router.replace("/analysis?step=health");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
       setSubmitting(false);
