@@ -29,6 +29,7 @@ import {
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 
+import { StoryTabs } from "@/components/story/story-tabs";
 import { isAuthenticated } from "@/lib/auth";
 import { createGoal, updateCurrentUser } from "@/lib/api";
 import { fetchOnboardingSnapshot, persistOnboardingSnapshot } from "@/lib/ai/engine";
@@ -135,14 +136,9 @@ function Dropdown({
   error?: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const btnRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -177,7 +173,7 @@ function Dropdown({
 
   const selected = options.find((o) => o.value === value);
 
-  const panel = open ? (
+  const panel = open && typeof document !== "undefined" ? (
     <>
       <div
         onClick={() => setOpen(false)}
@@ -235,7 +231,7 @@ function Dropdown({
         </span>
         <ChevronDown className={`size-4 text-white/50 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
-      {mounted && panel ? createPortal(panel, document.body) : null}
+      {panel ? createPortal(panel, document.body) : null}
     </>
   );
 }
@@ -519,11 +515,9 @@ function StepExpenses({
 function StepLoans({
   loans,
   onChange,
-  showErrors,
 }: {
   loans: LoanEntry[];
   onChange: (l: LoanEntry[]) => void;
-  showErrors: boolean;
 }) {
   function addLoan() {
     onChange([
@@ -1085,6 +1079,10 @@ export default function OnboardingPage() {
         <div className="absolute inset-0 opacity-[0.34]" style={{ backgroundImage: "linear-gradient(rgba(34,197,94,0.09) 1px, transparent 1px), linear-gradient(90deg, rgba(34,197,94,0.09) 1px, transparent 1px)", backgroundSize: "56px 56px", maskImage: "radial-gradient(circle at center, black 34%, transparent 92%)" }} />
       </div>
 
+      <div className="relative z-10 w-full max-w-[1600px] px-4 pt-6 sm:px-6 lg:px-8">
+        <StoryTabs currentStep={null} />
+      </div>
+
       <div className="relative z-10 w-full max-w-3xl px-4 py-12">
         {/* Title */}
         <div data-animate="title" className="mb-10 text-center">
@@ -1120,7 +1118,7 @@ export default function OnboardingPage() {
               showErrors={showErrors}
             />
           )}
-          {step === 2 && <StepLoans loans={loans} onChange={setLoans} showErrors={showErrors} />}
+          {step === 2 && <StepLoans loans={loans} onChange={setLoans} />}
           {step === 3 && <StepGoals goals={goals} onChange={setGoals} showErrors={showErrors} />}
 
           {error && (

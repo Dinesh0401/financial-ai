@@ -955,7 +955,7 @@ export function AIInsights({ fallback }: Props) {
           <p className="text-sm font-semibold">What you should do — step by step</p>
         </div>
         <p className="mt-1 text-xs text-muted-foreground">
-          Each card tells you what's wrong, and exactly how to fix it. Pick one and start with step 1.
+          Each card tells you what&apos;s wrong, and exactly how to fix it. Pick one and start with step 1.
         </p>
         <ol className="mt-4 space-y-3">
           {recos.map((r, i) => {

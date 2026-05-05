@@ -27,12 +27,6 @@ export function StoryStepper({ current }: { current: StoryStep }) {
             Step {currentIndex + 1} of {STEPS.length} · {STEPS[currentIndex]?.label}
           </p>
         </div>
-        <Link
-          href="/dashboard"
-          className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground"
-        >
-          Skip to dashboard &rarr;
-        </Link>
       </div>
 
       <ol className="mt-5 grid grid-cols-4 gap-2">

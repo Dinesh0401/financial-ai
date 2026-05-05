@@ -15,6 +15,7 @@ import { GoalsStep } from "@/components/story/goals-step";
 import { HealthStep } from "@/components/story/health-step";
 import { LoanStep } from "@/components/story/loan-step";
 import { StoryNav } from "@/components/story/story-nav";
+import { StoryTabs } from "@/components/story/story-tabs";
 import { type StoryStep } from "@/components/story/story-stepper";
 import { isAuthenticated } from "@/lib/auth";
 import { fetchOnboardingSnapshot, type OnboardingSnapshot } from "@/lib/ai/engine";
@@ -70,32 +71,39 @@ function AnalysisStory() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <Loader2 className="size-8 animate-spin text-primary" />
+      <div className="space-y-5">
+        <StoryTabs currentStep={step} />
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <Loader2 className="size-8 animate-spin text-primary" />
+        </div>
       </div>
     );
   }
 
   if (!snapshot || snapshot.income <= 0) {
     return (
-      <div className="grid min-h-[60vh] place-items-center">
-        <Card className="max-w-lg border-border/60 bg-card/80 backdrop-blur-xl">
-          <CardContent className="space-y-3 p-8 text-center">
-            <h2 className="text-2xl font-semibold">We need your numbers first</h2>
-            <p className="text-sm leading-7 text-muted-foreground">
-              Finish onboarding so I can show your money story across Health, Expenses, Loans and Goals.
-            </p>
-            <Link href="/onboarding">
-              <Button>Finish onboarding</Button>
-            </Link>
-          </CardContent>
-        </Card>
+      <div className="space-y-5">
+        <StoryTabs currentStep={step} />
+        <div className="grid min-h-[60vh] place-items-center">
+          <Card className="max-w-lg border-border/60 bg-card/80 backdrop-blur-xl">
+            <CardContent className="space-y-3 p-8 text-center">
+              <h2 className="text-2xl font-semibold">We need your numbers first</h2>
+              <p className="text-sm leading-7 text-muted-foreground">
+                Finish onboarding so I can show your money story across Health, Expenses, Loans and Goals.
+              </p>
+              <Link href="/onboarding">
+                <Button>Finish onboarding</Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-5">
+      <StoryTabs currentStep={step} />
       <div ref={stepRef}>
         {step === "health" && <HealthStep snapshot={snapshot} />}
         {step === "expenses" && <ExpenseStep snapshot={snapshot} />}

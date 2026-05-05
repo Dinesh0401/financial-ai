@@ -3,13 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { AlertTriangle, ArrowDownRight, ArrowRight, ArrowUpRight, BarChart3, CreditCard, Heart, Loader2, PencilLine, PiggyBank, Sparkles, Target } from "lucide-react";
+import { AlertTriangle, ArrowDownRight, ArrowUpRight, Loader2, PencilLine, PiggyBank, Sparkles } from "lucide-react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 
 import { AppShell } from "@/components/app-shell";
 import { HealthGauge } from "@/components/health-gauge";
 import { SpendingBreakdown } from "@/components/spending-breakdown";
+import { StoryTabs } from "@/components/story/story-tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -190,12 +191,15 @@ export default function DashboardPage() {
   if (state.loading) {
     return (
       <AppShell>
-        <div className="flex min-h-[60vh] items-center justify-center">
-          <div className="space-y-4 text-center">
-            <Loader2 className="mx-auto size-8 animate-spin text-primary" />
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-foreground">Loading your live financial dashboard...</p>
-              <p className="text-xs text-muted-foreground">Fetching your profile, analysis, and transaction summary.</p>
+        <div className="space-y-6">
+          <StoryTabs currentStep={null} />
+          <div className="flex min-h-[60vh] items-center justify-center">
+            <div className="space-y-4 text-center">
+              <Loader2 className="mx-auto size-8 animate-spin text-primary" />
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-foreground">Loading your live financial dashboard...</p>
+                <p className="text-xs text-muted-foreground">Fetching your profile, analysis, and transaction summary.</p>
+              </div>
             </div>
           </div>
         </div>
@@ -206,23 +210,26 @@ export default function DashboardPage() {
   if (state.error || !state.dashboard || !state.health || !state.profile) {
     return (
       <AppShell>
-        <div className="grid min-h-[60vh] place-items-center">
-          <Card className="max-w-xl border-border/60 bg-card/80 backdrop-blur-xl">
-            <CardContent className="space-y-4 p-8 text-center">
-              <AlertTriangle className="mx-auto size-8 text-primary" />
-              <div className="space-y-2">
-                <h2 className="text-2xl font-semibold">Couldn&apos;t load your dashboard</h2>
-                <p className="text-sm leading-7 text-muted-foreground">
-                  {state.error ?? "We hit a snag pulling your latest data. Try reloading — your session is still active."}
-                </p>
-              </div>
-              <div className="flex justify-center gap-2">
-                <Button onClick={() => window.location.reload()}>
-                  Try again
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+        <div className="space-y-6">
+          <StoryTabs currentStep={null} />
+          <div className="grid min-h-[60vh] place-items-center">
+            <Card className="max-w-xl border-border/60 bg-card/80 backdrop-blur-xl">
+              <CardContent className="space-y-4 p-8 text-center">
+                <AlertTriangle className="mx-auto size-8 text-primary" />
+                <div className="space-y-2">
+                  <h2 className="text-2xl font-semibold">Couldn&apos;t load your dashboard</h2>
+                  <p className="text-sm leading-7 text-muted-foreground">
+                    {state.error ?? "We hit a snag pulling your latest data. Try reloading — your session is still active."}
+                  </p>
+                </div>
+                <div className="flex justify-center gap-2">
+                  <Button onClick={() => window.location.reload()}>
+                    Try again
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </AppShell>
     );
@@ -254,6 +261,8 @@ export default function DashboardPage() {
   return (
     <AppShell>
       <div ref={pageRef} className="space-y-6">
+        <StoryTabs currentStep={null} />
+
         <div data-animate="status" className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <span className="relative inline-flex size-2">
@@ -291,7 +300,7 @@ export default function DashboardPage() {
                   )}
                 </h2>
                 <p className="mt-3 max-w-2xl text-sm leading-7 text-muted-foreground">
-                  Here's where your money stands this month. Scroll down for the full story and what to do next.
+                  Here&apos;s where your money stands this month. Scroll down for the full story and what to do next.
                 </p>
                 <div className="mt-6 grid gap-3 sm:grid-cols-3">
                   <div className="rounded-2xl border border-border/50 bg-background/40 p-3">
@@ -430,41 +439,6 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card data-animate="story-cta" className="overflow-hidden border-primary/30 bg-gradient-to-br from-primary/15 via-card/80 to-card/60 backdrop-blur-xl">
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-2">
-              <Sparkles className="size-4 text-primary" />
-              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-primary">Your Money Story</p>
-            </div>
-            <CardTitle className="mt-1 text-2xl">Want the full picture?</CardTitle>
-            <p className="text-sm leading-7 text-muted-foreground">
-              I&apos;ll walk you through it page by page — your health, where you spend, your loans, and your goals — with simple steps for each.
-            </p>
-          </CardHeader>
-          <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              { href: "/analysis?step=health", icon: Heart, label: "Health", hint: "Your money score" },
-              { href: "/analysis?step=expenses", icon: BarChart3, label: "Expenses", hint: "Where it goes" },
-              { href: "/analysis?step=loans", icon: CreditCard, label: "Loans", hint: "Pay off faster" },
-              { href: "/analysis?step=goals", icon: Target, label: "Goals", hint: "Plan the future" },
-            ].map(({ href, icon: Icon, label, hint }) => (
-              <Link
-                key={href}
-                href={href}
-                className="group flex items-center gap-3 rounded-2xl border border-border/50 bg-background/40 p-4 transition hover:border-primary/40 hover:bg-primary/5"
-              >
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-primary/15 text-primary ring-1 ring-primary/30">
-                  <Icon className="size-4" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-foreground">{label}</p>
-                  <p className="text-xs text-muted-foreground">{hint}</p>
-                </div>
-                <ArrowRight className="size-4 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-primary" />
-              </Link>
-            ))}
-          </CardContent>
-        </Card>
       </div>
     </AppShell>
   );

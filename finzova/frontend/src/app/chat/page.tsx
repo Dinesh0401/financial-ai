@@ -201,11 +201,11 @@ export default function ChatPage() {
             <div data-animate="welcome" className="flex min-h-full flex-col items-center justify-center py-10 text-center">
               <ZovaAvatar size={72} mood="happy" />
               <h1 className="mt-6 text-3xl font-semibold tracking-tight sm:text-4xl">
-                Hi, I'm <span className="bg-gradient-to-r from-primary to-emerald-300 bg-clip-text text-transparent">Zova</span>. Ask me anything about your money.
+                Hi, I&apos;m <span className="bg-gradient-to-r from-primary to-emerald-300 bg-clip-text text-transparent">Zova</span>. Ask me anything about your money.
               </h1>
               <p className="mt-3 max-w-lg text-sm leading-7 text-muted-foreground">
                 I know your income, spends, loans and goals from setup — so the answers are about you, not generic tips.
-                Try a simple question like "where am I spending the most?" and then "how can I reduce it?"
+                Try a simple question like &quot;where am I spending the most?&quot; and then &quot;how can I reduce it?&quot;
               </p>
 
               <div className="mt-10 grid w-full gap-3 sm:grid-cols-2">

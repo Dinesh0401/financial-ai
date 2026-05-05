@@ -19,7 +19,6 @@ import { useGSAP } from "@gsap/react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { SupportWidget } from "@/components/support-widget";
-import { StoryTabs } from "@/components/story/story-tabs";
 import { ZovaAvatar } from "@/components/zova-avatar";
 import { cn } from "@/lib/utils";
 import { clearSession, getStoredUser } from "@/lib/auth";
@@ -231,7 +230,6 @@ function TopBar() {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const mainRef = useRef<HTMLElement>(null);
-  const pathname = usePathname();
 
   useGSAP(
     () => {
@@ -248,7 +246,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen w-full pt-3">
       <TopBar />
-      {pathname === "/analysis" ? <StoryTabs /> : null}
       <main
         ref={mainRef}
         className="mx-auto w-full max-w-[1600px] px-4 pb-12 pt-5 sm:px-6 lg:px-8"
