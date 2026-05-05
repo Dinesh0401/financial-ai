@@ -3,12 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { AlertTriangle, ArrowDownRight, ArrowUpRight, Loader2, PencilLine, PiggyBank, Sparkles } from "lucide-react";
+import { AlertTriangle, ArrowDownRight, ArrowRight, ArrowUpRight, BarChart3, CreditCard, Heart, Loader2, PencilLine, PiggyBank, Sparkles, Target } from "lucide-react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 
 import { AppShell } from "@/components/app-shell";
-import { AIInsights } from "@/components/ai-insights";
 import { HealthGauge } from "@/components/health-gauge";
 import { SpendingBreakdown } from "@/components/spending-breakdown";
 import { Badge } from "@/components/ui/badge";
@@ -282,7 +281,7 @@ export default function DashboardPage() {
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <Sparkles className="size-4 text-primary" />
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-primary">Zova · your money sidekick</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-primary">This month</p>
                 </div>
                 <h2 data-animate="hero-heading" className="mt-4 text-balance text-3xl font-semibold tracking-tight text-foreground sm:text-[2.35rem]">
                   {firstName ? (
@@ -431,14 +430,41 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <AIInsights
-          fallback={{
-            income: incomeAmt,
-            expenses: expenseAmt,
-            savings: savingsAmt,
-            categoryTotals: spendingBreakdown,
-          }}
-        />
+        <Card data-animate="story-cta" className="overflow-hidden border-primary/30 bg-gradient-to-br from-primary/15 via-card/80 to-card/60 backdrop-blur-xl">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <Sparkles className="size-4 text-primary" />
+              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-primary">Your Money Story</p>
+            </div>
+            <CardTitle className="mt-1 text-2xl">Want the full picture?</CardTitle>
+            <p className="text-sm leading-7 text-muted-foreground">
+              I&apos;ll walk you through it page by page — your health, where you spend, your loans, and your goals — with simple steps for each.
+            </p>
+          </CardHeader>
+          <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              { href: "/analysis?step=health", icon: Heart, label: "Health", hint: "Your money score" },
+              { href: "/analysis?step=expenses", icon: BarChart3, label: "Expenses", hint: "Where it goes" },
+              { href: "/analysis?step=loans", icon: CreditCard, label: "Loans", hint: "Pay off faster" },
+              { href: "/analysis?step=goals", icon: Target, label: "Goals", hint: "Plan the future" },
+            ].map(({ href, icon: Icon, label, hint }) => (
+              <Link
+                key={href}
+                href={href}
+                className="group flex items-center gap-3 rounded-2xl border border-border/50 bg-background/40 p-4 transition hover:border-primary/40 hover:bg-primary/5"
+              >
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-primary/15 text-primary ring-1 ring-primary/30">
+                  <Icon className="size-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-foreground">{label}</p>
+                  <p className="text-xs text-muted-foreground">{hint}</p>
+                </div>
+                <ArrowRight className="size-4 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-primary" />
+              </Link>
+            ))}
+          </CardContent>
+        </Card>
       </div>
     </AppShell>
   );
