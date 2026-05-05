@@ -71,6 +71,7 @@ type GoalEntry = {
   priority: string;
   target: string;
   type: string;
+  years: string;
 };
 
 const LOAN_TYPES = [
@@ -633,7 +634,7 @@ function StepGoals({
   function addGoal() {
     onChange([
       ...goals,
-      { id: uid(), name: "", priority: "medium", target: "", type: "custom" },
+      { id: uid(), name: "", priority: "medium", target: "", type: "custom", years: "5" },
     ]);
   }
 
@@ -710,6 +711,19 @@ function StepGoals({
                 options={GOAL_TYPES.map((t) => ({ value: t.value, label: t.label }))}
               />
             </div>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <FieldGroup
+              icon={Target}
+              label="When do you want it? (years)"
+              value={goal.years}
+              onChange={(v) => updateGoal(goal.id, { years: v })}
+              placeholder="5"
+              kind="number"
+              required
+              showRequiredError={showErrors}
+            />
+            <div className="hidden sm:block" />
           </div>
         </div>
       ))}
@@ -811,7 +825,7 @@ export default function OnboardingPage() {
   ]);
 
   const [goals, setGoals] = useState<GoalEntry[]>([
-    { id: uid(), name: "", priority: "high", target: "", type: "emergency_fund" },
+    { id: uid(), name: "", priority: "high", target: "", type: "emergency_fund", years: "1" },
   ]);
 
   useEffect(() => {
@@ -863,6 +877,7 @@ export default function OnboardingPage() {
             priority: g.priority ?? "medium",
             target: g.targetAmount ? String(g.targetAmount) : "",
             type: g.type ?? "custom",
+            years: g.years ? String(g.years) : "5",
           })),
         );
       }
@@ -949,6 +964,12 @@ export default function OnboardingPage() {
       if (!hasAtLeastOne) {
         return { ok: false, error: "Add at least one goal with a name and target amount." };
       }
+      const missingYears = goals.some(
+        (g) => g.name.trim() && parseNum(g.target) > 0 && (!g.years.trim() || parseNum(g.years) <= 0),
+      );
+      if (missingYears) {
+        return { ok: false, error: "Tell me how many years you have for each goal." };
+      }
       return { ok: true };
     }
     return { ok: true };
@@ -1015,7 +1036,7 @@ export default function OnboardingPage() {
             type: g.type,
             name: g.name.trim(),
             targetAmount: parseNum(g.target),
-            years: g.priority === "high" ? 1 : g.priority === "medium" ? 2 : 3,
+            years: Math.max(1, parseNum(g.years) || 5),
             priority: g.priority as "high" | "medium" | "low",
           })),
       });
@@ -1029,8 +1050,7 @@ export default function OnboardingPage() {
       for (const goal of goals) {
         const targetAmount = parseNum(goal.target);
         if (goal.name.trim() && targetAmount > 0) {
-          const timelineMonths =
-            goal.priority === "high" ? 12 : goal.priority === "medium" ? 24 : 36;
+          const timelineMonths = Math.max(1, (parseNum(goal.years) || 5) * 12);
           try {
             await createGoal({
               goal_type: goal.type,

@@ -522,15 +522,60 @@ export function AIInsights({ fallback }: Props) {
                       <div className="h-full rounded-full bg-primary" style={{ width: `${goalProb}%` }} />
                     </div>
                     {isUnrealistic ? (
-                      <div className="mt-3 rounded-xl border border-amber-400/30 bg-amber-500/10 p-3 text-[11px] leading-5 text-amber-100">
-                        <p className="font-semibold">Hard at this timeline.</p>
-                        <p className="mt-1">
-                          You&apos;d need to save ₹{needed.toLocaleString("en-IN")}/mo — more than your whole salary.
-                          {feasibleYears && feasibleYears > topGoal.years
-                            ? ` Try ${feasibleYears} years instead — that's roughly ₹${Math.ceil(topGoal.targetAmount / (feasibleYears * 12)).toLocaleString("en-IN")}/mo.`
-                            : " Consider a smaller target or a longer timeline."}
-                        </p>
-                      </div>
+                      (() => {
+                        const isHomeGoal =
+                          /home|house|apartment|flat/i.test(topGoal.name ?? "") ||
+                          topGoal.type === "home" ||
+                          topGoal.type === "house";
+                        const downpaymentTarget = Math.round(topGoal.targetAmount * 0.2);
+                        const realisticYears = feasibleYears && feasibleYears > topGoal.years ? feasibleYears : 10;
+                        const downpaymentMonthly = Math.ceil(downpaymentTarget / (realisticYears * 12));
+                        const homeLoanEligible = Math.round(monthlySavings * 60); // rough 60x EMI capacity
+                        return (
+                          <div className="mt-3 rounded-xl border border-amber-400/30 bg-amber-500/10 p-3 text-[11px] leading-5 text-amber-100">
+                            <p className="text-sm font-semibold text-foreground">
+                              Hard in {topGoal.years} year{topGoal.years === 1 ? "" : "s"} — but here&apos;s how to actually do it
+                            </p>
+                            <p className="mt-1">
+                              You&apos;d need ₹{needed.toLocaleString("en-IN")}/month, more than your whole salary. That&apos;s not realistic.
+                            </p>
+                            {isHomeGoal ? (
+                              <ol className="mt-3 space-y-2 text-xs leading-5 text-amber-50/95">
+                                <li className="flex gap-2">
+                                  <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-amber-500/40 text-[10px] font-semibold">1</span>
+                                  <span>
+                                    <span className="font-semibold">Aim for the downpayment, not the full price.</span> You only need 20% upfront ≈ ₹{downpaymentTarget.toLocaleString("en-IN")}. The bank pays the rest as a home loan.
+                                  </span>
+                                </li>
+                                <li className="flex gap-2">
+                                  <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-amber-500/40 text-[10px] font-semibold">2</span>
+                                  <span>
+                                    Save ₹{downpaymentMonthly.toLocaleString("en-IN")}/month for {realisticYears} years in a SIP (Nifty 50 index fund). At ~12% returns this builds your downpayment.
+                                  </span>
+                                </li>
+                                <li className="flex gap-2">
+                                  <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-amber-500/40 text-[10px] font-semibold">3</span>
+                                  <span>
+                                    On your current savings of ₹{monthlySavings.toLocaleString("en-IN")}/month, banks may approve a home loan up to about ₹{homeLoanEligible.toLocaleString("en-IN")}. Check eligibility on your bank app.
+                                  </span>
+                                </li>
+                                <li className="flex gap-2">
+                                  <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-amber-500/40 text-[10px] font-semibold">4</span>
+                                  <span>
+                                    Update your goal: change timeline to <span className="font-semibold">{realisticYears} years</span> or change target to <span className="font-semibold">₹{downpaymentTarget.toLocaleString("en-IN")}</span> (downpayment only).
+                                  </span>
+                                </li>
+                              </ol>
+                            ) : (
+                              <p className="mt-1">
+                                {feasibleYears && feasibleYears > topGoal.years
+                                  ? `Try ${feasibleYears} years instead — that's roughly ₹${Math.ceil(topGoal.targetAmount / (feasibleYears * 12)).toLocaleString("en-IN")}/mo, doable on your income.`
+                                  : "Try a smaller target or a longer timeline. Edit your goal to make it realistic."}
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })()
                     ) : (
                       <p className="mt-3 text-[11px] text-muted-foreground">
                         {shortfall > 0

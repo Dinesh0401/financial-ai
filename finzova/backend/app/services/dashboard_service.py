@@ -52,17 +52,40 @@ class DashboardService:
         expense_value = latest_month["expenses"]
         savings_value = income_value - expense_value
 
+        quick_insights: list[str] = []
         if transactions:
+            # Only surface meaningful insights — skip nonsense like negative savings
+            # rates (debit-only statements) and "uncategorized" largest category.
+            if 0 <= metrics.savings_rate <= 1.5:
+                rate_pct = metrics.savings_rate * 100
+                if rate_pct >= 20:
+                    quick_insights.append(
+                        f"You're saving {rate_pct:.0f}% of what you earn — healthy."
+                    )
+                elif rate_pct >= 10:
+                    quick_insights.append(
+                        f"You're saving {rate_pct:.0f}% of what you earn. Push past 20% if you can."
+                    )
+                else:
+                    quick_insights.append(
+                        f"You're saving {rate_pct:.0f}% of what you earn — too low, aim for 20%."
+                    )
+
+            largest = (metrics.largest_category or "").strip().lower()
+            if largest and largest not in {"uncategorized", "other", ""}:
+                quick_insights.append(
+                    f"Your biggest spend is on {largest.replace('_', ' ')}."
+                )
+
+            if metrics.emergency_fund_months >= 0.5:
+                quick_insights.append(
+                    f"Your emergency buffer covers {metrics.emergency_fund_months:.1f} months of expenses."
+                )
+
+        if not quick_insights:
             quick_insights = [
-                f"Your savings rate is {metrics.savings_rate * 100:.1f}% across the recent transaction window.",
-                f"Largest expense category is {metrics.largest_category.replace('_', ' ')}.",
-                f"Emergency reserve currently covers {metrics.emergency_fund_months:.1f} months of essentials.",
-            ]
-        else:
-            quick_insights = [
-                "No transactions found yet. Upload bank or UPI statements to start live analysis.",
-                "Your monthly income input is used as a planning baseline until transaction history is available.",
-                "Risk and spending insights will become active after the first statement upload.",
+                "Your setup numbers are loaded — scroll down for personal advice.",
+                "Upload a bank or UPI statement to unlock automatic spending insights.",
             ]
 
         return {
