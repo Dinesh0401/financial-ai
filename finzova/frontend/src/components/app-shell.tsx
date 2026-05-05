@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation";
 import {
   BarChart3,
   BookOpen,
-  Bot,
   Goal,
   LayoutDashboard,
   LogOut,
@@ -18,7 +17,6 @@ import { useGSAP } from "@gsap/react";
 
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { SupportWidget } from "@/components/support-widget";
 import { ZovaAvatar } from "@/components/zova-avatar";
 import { cn } from "@/lib/utils";
 import { clearSession, getStoredUser } from "@/lib/auth";
@@ -30,7 +28,6 @@ const navItems = [
   { href: "/analysis", label: "My Money Story", icon: BarChart3 },
   { href: "/transactions", label: "Transactions", icon: ReceiptText },
   { href: "/goals", label: "Goals", icon: Goal },
-  { href: "/chat", label: "Ask Zova", icon: Bot },
   { href: "/guide", label: "How to Use", icon: BookOpen },
 ];
 
@@ -210,7 +207,17 @@ function TopBar() {
           </div>
 
           <div className="ml-auto flex items-center gap-2">
-            <SupportWidget variant="navbar" />
+            <Link
+              href="/chat"
+              data-animate="nav-link"
+              aria-label="Ask Zova"
+              className="group inline-flex items-center gap-2 rounded-full border border-primary/55 bg-gradient-to-br from-emerald-500 via-primary to-emerald-600 px-2 py-1.5 shadow-[0_8px_24px_-12px_rgba(16,185,129,0.55)] transition hover:scale-[1.02] hover:border-primary/80"
+            >
+              <ZovaAvatar size={30} mood="happy" glow={false} />
+              <span className="pr-3 text-sm font-semibold tracking-wide text-white drop-shadow-[0_1px_0_rgba(0,0,0,0.25)]">
+                Ask Zova
+              </span>
+            </Link>
             <div className="hidden lg:block">
               <LogoutButton compact />
             </div>
