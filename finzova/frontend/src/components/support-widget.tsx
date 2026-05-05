@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { BookOpen, HelpCircle, LifeBuoy, Mail, MessageCircleQuestion, Upload, X } from "lucide-react";
+import { BookOpen, Bot, HelpCircle, Mail, MessageCircleQuestion, Upload, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -37,6 +37,12 @@ const TOPICS: Topic[] = [
   },
 ];
 
+const QUICK_CHAT_PROMPTS = [
+  "Can I buy a bike?",
+  "How fast can I close my loan?",
+  "What should I do first this month?",
+];
+
 export function SupportWidget() {
   const [open, setOpen] = useState(false);
 
@@ -45,29 +51,47 @@ export function SupportWidget() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        aria-label={open ? "Close support" : "Open support"}
+        aria-label={open ? "Close help" : "Open help"}
         className={cn(
           "fixed bottom-5 right-5 z-50 flex size-14 items-center justify-center rounded-full border border-primary/40 bg-primary text-primary-foreground shadow-[0_18px_45px_-12px_rgba(0,0,0,0.7)] transition hover:scale-105",
           open && "bg-background text-foreground",
         )}
       >
-        {open ? <X className="size-5" /> : <LifeBuoy className="size-6" />}
+        {open ? <X className="size-5" /> : <Bot className="size-6" />}
       </button>
 
       {open && (
         <div className="fixed bottom-24 right-5 z-50 w-[min(360px,calc(100vw-2.5rem))] overflow-hidden rounded-3xl border border-border/70 bg-card/95 shadow-[0_28px_60px_-20px_rgba(0,0,0,0.8)] backdrop-blur-xl">
           <div className="border-b border-border/60 bg-gradient-to-br from-primary/20 via-primary/10 to-transparent px-5 py-4">
             <div className="flex items-center gap-2 text-primary">
-              <LifeBuoy className="size-4" />
-              <p className="text-xs uppercase tracking-[0.28em]">Support</p>
+              <Bot className="size-4" />
+              <p className="text-xs uppercase tracking-[0.28em]">Ask Zova</p>
             </div>
-            <h3 className="mt-2 text-lg font-semibold">How can we help?</h3>
+            <h3 className="mt-2 text-lg font-semibold">Quick money help</h3>
             <p className="mt-1 text-xs text-muted-foreground">
-              Quick answers for using Finzova and fixing common issues.
+              Ask a ready-made question or open support help.
             </p>
           </div>
 
           <div className="max-h-[min(60vh,440px)] space-y-2 overflow-y-auto p-3">
+            <div className="rounded-2xl border border-primary/25 bg-primary/10 p-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">Floating chatbot</p>
+              <div className="mt-2 space-y-1.5">
+                {QUICK_CHAT_PROMPTS.map((q) => (
+                  <Link
+                    key={q}
+                    href={`/chat?q=${encodeURIComponent(q)}&send=1`}
+                    onClick={() => setOpen(false)}
+                    className="flex items-start gap-2 rounded-xl border border-border/60 bg-background/45 px-3 py-2 text-sm text-foreground transition hover:border-primary/40 hover:bg-primary/5"
+                  >
+                    <Bot className="mt-0.5 size-4 shrink-0 text-primary" />
+                    <span>{q}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            <p className="px-1 pt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Support topics</p>
             {TOPICS.map(({ icon: Icon, title, body, href }) => {
               const content = (
                 <div className="flex gap-3 rounded-2xl border border-border/50 bg-background/40 px-3 py-3 transition hover:border-primary/40 hover:bg-primary/5">

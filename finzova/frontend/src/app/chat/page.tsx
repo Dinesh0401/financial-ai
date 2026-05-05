@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowUp, Loader2, Sparkles, User2 } from "lucide-react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
@@ -33,6 +33,7 @@ const STARTER_PROMPTS = [
 
 export default function ChatPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
@@ -40,6 +41,7 @@ export default function ChatPage() {
   const [activeAgents, setActiveAgents] = useState<string[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const chatPageRef = useRef<HTMLDivElement>(null);
+  const autoPromptHandledRef = useRef(false);
 
   useGSAP(
     () => {
@@ -62,7 +64,7 @@ export default function ChatPage() {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, thinkingText]);
 
-  async function submitPrompt(value: string) {
+  const submitPrompt = useCallback(async (value: string) => {
     if (!value.trim() || streaming) return;
 
     const token = getToken();
@@ -164,7 +166,21 @@ export default function ChatPage() {
       setThinkingText("");
       setActiveAgents([]);
     }
-  }
+  }, [router, streaming]);
+
+  useEffect(() => {
+    if (autoPromptHandledRef.current) return;
+    const q = (searchParams.get("q") ?? "").trim();
+    if (!q) return;
+    if (messages.length > 0 || streaming) return;
+    const autoSend = searchParams.get("send") === "1";
+    autoPromptHandledRef.current = true;
+    if (autoSend) {
+      void submitPrompt(q);
+      return;
+    }
+    setInput(q);
+  }, [messages.length, searchParams, streaming, submitPrompt]);
 
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === "Enter" && !e.shiftKey) {

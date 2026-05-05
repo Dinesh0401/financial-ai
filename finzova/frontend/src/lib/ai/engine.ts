@@ -203,6 +203,7 @@ export type Recommendation = {
   severity: "info" | "warn" | "risk";
   title: string;
   detail: string;
+  howTo: string[];
   impactMonthly: number;
   priority: number;
   rationale: string;
@@ -228,11 +229,16 @@ export function generateRecommendations(data: OnboardingSnapshot): Recommendatio
     rec.push({
       agent: "Expense",
       severity: "warn",
-      title: "Food spending is high",
-      detail: `Food is ${Math.round((food / income) * 100)}% of income (benchmark ≤15%). Trim 15% to free ₹${cut.toLocaleString("en-IN")}/month.`,
+      title: "You're spending too much on food",
+      detail: `Food costs ₹${food.toLocaleString("en-IN")}/month — that's ${Math.round((food / income) * 100)}% of what you earn (most people stay under 15%). Trim it by 15% and you save ₹${cut.toLocaleString("en-IN")}/month.`,
+      howTo: [
+        "Cook 2-3 dinners at home each week — saves ₹800-1,500/week vs Swiggy/Zomato.",
+        "Set a ₹250 limit per food-delivery order in the app settings.",
+        "Order weekly groceries from BigBasket/DMart on Sunday instead of daily kirana runs.",
+      ],
       impactMonthly: cut,
       priority: 6,
-      rationale: `food/income = ${(food / income).toFixed(2)} > 0.40`,
+      rationale: `food share = ${(food / income).toFixed(2)} of income`,
     });
   }
   if (rent > 0.35 * income) {
@@ -240,11 +246,16 @@ export function generateRecommendations(data: OnboardingSnapshot): Recommendatio
     rec.push({
       agent: "Expense",
       severity: "warn",
-      title: "Rent burden above 30%",
-      detail: `Rent is ${Math.round((rent / income) * 100)}% of income (benchmark ≤30%). Moving to a ₹${Math.round(0.3 * income).toLocaleString("en-IN")} rent slot saves ₹${cut.toLocaleString("en-IN")}/month.`,
+      title: "Your rent is eating too much",
+      detail: `Rent is ₹${rent.toLocaleString("en-IN")} (${Math.round((rent / income) * 100)}% of income). A typical safe number is under 30%. Moving to a ₹${Math.round(0.3 * income).toLocaleString("en-IN")} place would save you ₹${cut.toLocaleString("en-IN")}/month.`,
+      howTo: [
+        "Look at places 2-3 km away from your current spot — usually ₹5-10k cheaper.",
+        "Get a flatmate to split rent + utilities; cuts your share in half overnight.",
+        "Renegotiate at lease renewal — tell your landlord you're considering a move.",
+      ],
       impactMonthly: cut,
       priority: 5,
-      rationale: `rent/income = ${(rent / income).toFixed(2)} > 0.35`,
+      rationale: `rent share = ${(rent / income).toFixed(2)} of income`,
     });
   }
   if (shopping > 0.2 * income) {
@@ -252,11 +263,16 @@ export function generateRecommendations(data: OnboardingSnapshot): Recommendatio
     rec.push({
       agent: "Expense",
       severity: "info",
-      title: "Discretionary shopping leak",
-      detail: `Shopping at ${Math.round((shopping / income) * 100)}% of income. Cap at 15% to redirect ₹${cut.toLocaleString("en-IN")}/mo into an auto-SIP.`,
+      title: "Online shopping is leaking money",
+      detail: `You're spending ${Math.round((shopping / income) * 100)}% of income on shopping. Capping it at 15% frees ₹${cut.toLocaleString("en-IN")}/month for savings.`,
+      howTo: [
+        "Open Amazon/Flipkart/Myntra and delete every saved card — extra friction kills impulse buys.",
+        "Anything over ₹2,000? Add to cart and wait 72 hours before checkout.",
+        "Move ₹" + cut.toLocaleString("en-IN") + "/month to a separate 'do-not-touch' account on salary day.",
+      ],
       impactMonthly: cut,
       priority: 3,
-      rationale: `shopping/income = ${(shopping / income).toFixed(2)} > 0.20`,
+      rationale: `shopping share = ${(shopping / income).toFixed(2)} of income`,
     });
   }
   if (entertainment > 0.1 * income) {
@@ -264,11 +280,16 @@ export function generateRecommendations(data: OnboardingSnapshot): Recommendatio
     rec.push({
       agent: "Expense",
       severity: "info",
-      title: "Subscription creep",
-      detail: `Entertainment at ${Math.round((entertainment / income) * 100)}% of income. Audit streaming + switch to annual plans to recover ~₹${cut.toLocaleString("en-IN")}/mo.`,
+      title: "Subscription pile is too big",
+      detail: `Entertainment + subscriptions are ${Math.round((entertainment / income) * 100)}% of income. Trim them and recover about ₹${cut.toLocaleString("en-IN")}/month.`,
+      howTo: [
+        "Open GPay or PhonePe → 'UPI Autopay' → cancel anything you haven't used in 30 days.",
+        "Pick 2 OTTs to keep active and rotate the rest. Share annual family plans (4-way splits are fair).",
+        "Swap one theatre outing/month for home viewing — saves ₹800-1,500 each time.",
+      ],
       impactMonthly: cut,
       priority: 2,
-      rationale: `entertainment/income = ${(entertainment / income).toFixed(2)} > 0.10`,
+      rationale: `entertainment share = ${(entertainment / income).toFixed(2)} of income`,
     });
   }
 
@@ -277,66 +298,99 @@ export function generateRecommendations(data: OnboardingSnapshot): Recommendatio
     rec.push({
       agent: "Risk",
       severity: savingsRatio < 0.1 ? "risk" : "warn",
-      title: "Savings rate below benchmark",
-      detail: `Savings rate is ${Math.round(Math.max(0, savingsRatio) * 100)}% (target 20%+). Auto-sweep ₹${target.toLocaleString("en-IN")}/mo into a liquid fund to lift buffer.`,
+      title: "You're not saving enough",
+      detail: `Right now you save ${Math.round(Math.max(0, savingsRatio) * 100)}% of what you earn. The safe number is at least 20%. Even ₹${target.toLocaleString("en-IN")}/month into a separate savings account builds a buffer.`,
+      howTo: [
+        "Open your bank app today and create a new savings account (most banks: 'Add account' → 'Goal account' or '2nd savings').",
+        `Set up an auto-transfer of ₹${target.toLocaleString("en-IN")} from your main account on salary day (1st or 7th).`,
+        "Don't keep the new account's debit card. Out of sight, out of spend.",
+      ],
       impactMonthly: target,
       priority: savingsRatio < 0.1 ? 10 : 8,
-      rationale: `savings/income = ${savingsRatio.toFixed(2)} < 0.20`,
+      rationale: `savings share = ${savingsRatio.toFixed(2)} of income`,
     });
   }
 
   if (debt > income * 6) {
+    const topLoan = [...data.loans].sort((a, b) => b.interest - a.interest)[0];
+    const topName = topLoan ? (topLoan.name ?? topLoan.type) : "highest-rate loan";
     rec.push({
       agent: "Debt",
       severity: "risk",
-      title: "Debt load exceeds 6× monthly income",
-      detail: `Total debt is ${(debt / income).toFixed(1)}× monthly income. Attack the highest-rate loan first (avalanche) and freeze new credit.`,
+      title: "Your total debt is too high",
+      detail: `You owe ₹${debt.toLocaleString("en-IN")} — that's ${(debt / income).toFixed(1)} months of your income. Attack the loan that costs you the most interest first.`,
+      howTo: [
+        `Pay extra on your ${topName} (highest interest) every month — even ₹500 extra cuts months off the loan.`,
+        "Don't take any new EMI for the next 6 months — no new credit cards, no buy-now-pay-later.",
+        "Once one loan closes, redirect that EMI amount onto the next-highest-rate loan (snowball it).",
+      ],
       impactMonthly: 0,
       priority: 9,
-      rationale: `debt/monthlyIncome = ${(debt / income).toFixed(1)} > 6`,
+      rationale: `debt is ${(debt / income).toFixed(1)} months of income`,
     });
   }
   if (emi > 0.5 * income) {
     rec.push({
       agent: "Debt",
       severity: "risk",
-      title: "EMI overload (>50% of income)",
-      detail: `EMIs at ${Math.round((emi / income) * 100)}% of income. Refinance highest-rate loan to bring ratio under 50%; pause new credit.`,
+      title: "Your EMIs are way too heavy",
+      detail: `EMIs eat ${Math.round((emi / income) * 100)}% of your income. Safe is under 30%. You need to bring this down before anything else.`,
+      howTo: [
+        "Call your bank's loan helpline this week and ask if they can lower your interest rate (especially if you've been paying on time).",
+        "Check 2-3 other banks for a balance transfer — even a 2% rate drop saves ₹2,000-5,000/month on a ₹5L loan.",
+        "Pause all new EMIs (no new car, no new card, no BNPL) until your EMI ratio is under 50%.",
+      ],
       impactMonthly: Math.round((emi - 0.5 * income) * 0.3),
       priority: 10,
-      rationale: `emi/income = ${(emi / income).toFixed(2)} > 0.50`,
+      rationale: `emi share = ${(emi / income).toFixed(2)} of income`,
     });
   } else if (emi > 0.3 * income) {
     rec.push({
       agent: "Debt",
       severity: "warn",
-      title: "Accelerate top-rate EMI",
-      detail: `EMIs at ${Math.round((emi / income) * 100)}% of income. A 15% EMI bump closes your top-rate loan 18–24 months earlier.`,
+      title: "Pay off your top loan faster",
+      detail: `EMIs are ${Math.round((emi / income) * 100)}% of income. Adding 15% to your top-rate EMI closes that loan 18-24 months earlier.`,
+      howTo: [
+        "Identify your highest-interest loan (usually credit card or personal loan).",
+        "Set up a manual extra payment of 15% of that EMI on the same day each month — most banks allow extra principal payment in the app.",
+        "Don't reduce the regular EMI — keep the extra as a separate principal pre-payment.",
+      ],
       impactMonthly: Math.round(emi * 0.15),
       priority: 5,
-      rationale: `0.30 < emi/income (${(emi / income).toFixed(2)}) ≤ 0.50`,
+      rationale: `emi share = ${(emi / income).toFixed(2)} of income`,
     });
   }
 
   if (savingsRatio >= 0.2 && emi < 0.3 * income) {
     const sip = Math.max(3000, Math.round(income * 0.1));
+    const sipFiveY = Math.round(((sip * 12 * (Math.pow(1.12, 5) - 1)) / 0.12));
     rec.push({
       agent: "Investment",
       severity: "info",
-      title: "Open or step-up SIP",
-      detail: `Route ₹${sip.toLocaleString("en-IN")}/mo into a diversified equity index SIP. 12% CAGR compounds to ₹${Math.round(((sip * 12 * (Math.pow(1.12, 5) - 1)) / 0.12)).toLocaleString("en-IN")} in 5y.`,
+      title: "Start (or step up) a monthly SIP",
+      detail: `You have spare cash. Put ₹${sip.toLocaleString("en-IN")}/month into a simple index fund — at typical 12% returns, that grows to ₹${sipFiveY.toLocaleString("en-IN")} in 5 years.`,
+      howTo: [
+        "Download Zerodha Coin or Groww app and complete KYC (5 minutes with PAN + Aadhaar).",
+        "Search for 'Nifty 50 Index Fund' (UTI, HDFC, or ICICI all work). Pick any one — they're nearly identical.",
+        `Set up a monthly SIP of ₹${sip.toLocaleString("en-IN")} on a date 2 days after salary.`,
+      ],
       impactMonthly: sip,
       priority: 4,
-      rationale: `savings/income ≥ 0.20 AND emi/income < 0.30`,
+      rationale: `savings rate healthy + low EMI burden`,
     });
     rec.push({
       agent: "Investment",
       severity: "info",
-      title: "Hedge with sovereign gold",
-      detail: `Allocate 10–15% of investable surplus (≈₹${Math.round(sip * 0.12).toLocaleString("en-IN")}/mo) to SGB/Gold ETFs for inflation protection.`,
+      title: "Add a small gold safety net",
+      detail: `Put about ₹${Math.round(sip * 0.12).toLocaleString("en-IN")}/month (10-15% of your spare cash) into gold for inflation protection.`,
+      howTo: [
+        "Wait for the next RBI Sovereign Gold Bond (SGB) tranche — they release one every few months. Buy through your broker.",
+        "Or simpler: buy 'Nippon Gold ETF' on Zerodha — instant, no lock-in.",
+        "Don't buy physical gold (jewellery) for investment — making charges eat 10-20%.",
+      ],
       impactMonthly: Math.round(sip * 0.12),
       priority: 2,
-      rationale: `portfolio diversification rule, applies when savings rate healthy`,
+      rationale: `add gold for diversification`,
     });
   }
 
@@ -344,11 +398,16 @@ export function generateRecommendations(data: OnboardingSnapshot): Recommendatio
     rec.push({
       agent: "Investment",
       severity: "info",
-      title: "Baseline is strong — compound it",
-      detail: "No urgent leaks. Automate a monthly SIP, review allocation quarterly, and raise contributions 10% each year.",
+      title: "You're doing great — keep compounding",
+      detail: "No red flags right now. Automate one SIP, check it once a quarter, and raise the amount 10% each year.",
+      howTo: [
+        "Open Zerodha Coin or Groww and start a monthly SIP into a Nifty 50 Index Fund.",
+        "Set a calendar reminder for every January 1 to bump your SIP amount by 10%.",
+        "Review your portfolio every 3 months — that's it. Don't churn.",
+      ],
       impactMonthly: 0,
       priority: 1,
-      rationale: `no risk or expense thresholds tripped`,
+      rationale: `no major risks detected`,
     });
   }
 

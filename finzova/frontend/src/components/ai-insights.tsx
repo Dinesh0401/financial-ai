@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   CircleDot,
   CreditCard,
+  Gamepad2,
   Info,
   Lightbulb,
   LineChart,
@@ -139,48 +140,43 @@ function TopAlerts({
 }) {
   const alerts: Alert[] = [];
   const m = breakdown.metrics;
+  const foodSpend = data.expenses.food_dining ?? data.expenses.food ?? 0;
 
-  // Overspend on a category
-  const expenseEntries = Object.entries(data.expenses)
-    .map(([k, v]) => ({ key: k, name: k.replace(/_/g, " "), amount: v }))
-    .filter((e) => e.amount > 0)
-    .sort((a, b) => b.amount - a.amount);
-  const top = expenseEntries[0];
-  if (top && m.income > 0 && top.amount > m.income * 0.25) {
-    const safeLine = Math.round(m.income * 0.25);
-    const over = top.amount - safeLine;
+  if (foodSpend > 0 && m.income > 0 && foodSpend > m.income * 0.2) {
+    const safeLine = Math.round(m.income * 0.2);
+    const over = foodSpend - safeLine;
     alerts.push({
       tone: "warn",
       emoji: "⚠️",
-      text: `You spend ₹${top.amount.toLocaleString("en-IN")}/month on ${top.name}. That's ₹${over.toLocaleString("en-IN")} over what's typical for your income.`,
+      text: `You are overspending ₹${over.toLocaleString("en-IN")}/month on food.`,
     });
   }
 
   // High-interest loan detected
-  const highLoan = (data.loans || []).find((l) => Number(l.interest) >= 18);
+  const highLoan = [...(data.loans || [])].sort((a, b) => b.interest - a.interest)[0];
   if (highLoan) {
     alerts.push({
       tone: "warn",
       emoji: "🔥",
-      text: `High-interest loan: ${highLoan.name ?? highLoan.type} at ${highLoan.interest}%. Pay this off first to save the most.`,
+      text: `High-interest loan detected (${highLoan.interest}%) — pay ${highLoan.name ?? highLoan.type} first.`,
     });
   }
 
-  // EMI burden too high
-  if (m.income > 0 && m.debtServiceRatio > 0.5) {
+  // Smart alert: risky EMI ratio
+  if (m.income > 0 && m.debtServiceRatio > 0.4) {
     alerts.push({
       tone: "warn",
       emoji: "⚠️",
-      text: `Your EMIs eat ${Math.round(m.debtServiceRatio * 100)}% of your income (safe is under 30%). Refinance or close one loan if you can.`,
+      text: `Your EMI ratio is risky (${Math.round(m.debtServiceRatio * 100)}% of income).`,
     });
   }
 
-  // Savings rate low
-  if (m.income > 0 && m.savingsRatio < 0.1 && m.savings <= 0) {
+  // Smart alert: no weekly buffer
+  if (m.income > 0 && m.savingsRatio < 0.1) {
     alerts.push({
       tone: "warn",
       emoji: "⚠️",
-      text: `You aren't saving anything right now. Even ₹500/week as auto-transfer would build a small buffer.`,
+      text: `You overspend this month. Set a weekly cap so spending doesn't run ahead.`,
     });
   }
 
@@ -192,7 +188,7 @@ function TopAlerts({
     alerts.push({
       tone: "good",
       emoji: "✅",
-      text: `You could save up to ₹${totalPotentialSave.toLocaleString("en-IN")}/month if you act on the action list below.`,
+      text: `You can save ₹${totalPotentialSave.toLocaleString("en-IN")}/month if you follow the plan.`,
     });
   }
 
@@ -242,6 +238,12 @@ function TopAlerts({
           </li>
         ))}
       </ul>
+      <a
+        href="#action-list"
+        className="mt-3 inline-flex text-xs font-medium text-primary underline-offset-4 hover:underline"
+      >
+        Open the action list below
+      </a>
     </div>
   );
 }
@@ -307,8 +309,41 @@ export function AIInsights({ fallback }: Props) {
     ? calculateGoalProbability(topGoal, monthlySavings)
     : null;
 
-  const topLoan = data.loans[0];
+  const topLoan = [...data.loans].sort((a, b) => b.interest - a.interest)[0];
   const loanOpt = topLoan ? optimizeLoan(topLoan) : null;
+  const foodSpend = data.expenses.food_dining ?? data.expenses.food ?? 0;
+  const subscriptionSpend = (data.expenses.entertainment ?? 0) + (data.expenses.subscriptions ?? 0);
+  const foodTarget = foodSpend > 0 ? Math.round(foodSpend * 0.6) : 0;
+  const subscriptionTarget = subscriptionSpend > 0 ? Math.round(subscriptionSpend * 0.43) : 0;
+  const totalSavingsCreated =
+    Math.max(0, foodSpend - foodTarget) + Math.max(0, subscriptionSpend - subscriptionTarget);
+  const essentialMonthly = Math.max(
+    0,
+    (data.expenses.rent_housing ?? data.expenses.rent ?? 0) +
+      (data.expenses.food_dining ?? data.expenses.food ?? 0) +
+      (data.expenses.transport ?? 0) +
+      (data.expenses.healthcare ?? 0) +
+      emi,
+  );
+  const emergencyRequired = essentialMonthly * 3;
+  const emergencyCurrent = 0;
+  const emergencyGap = Math.max(0, emergencyRequired - emergencyCurrent);
+  const emergencyBuildMonths =
+    monthlySavings > 0 ? Math.ceil(emergencyGap / Math.max(1, monthlySavings)) : null;
+  const actionSip = monthlySavings >= 2000 ? 2000 : monthlySavings >= 500 ? Math.floor(monthlySavings / 500) * 500 : 0;
+  const expenseChartData = Object.entries(data.expenses)
+    .map(([k, v]) => ({ name: k.replace(/_/g, " "), value: v }))
+    .filter((e) => e.value > 0)
+    .sort((a, b) => b.value - a.value);
+  const gameLevel =
+    data.loans.length === 0 && score >= 80
+      ? "Debt-Free Hero"
+      : score >= 55
+        ? "Smart Investor"
+        : "Beginner Saver";
+  const fiveYearSavings = Math.max(0, forecast.improved.monthlySavings * 60);
+  const canBeDebtFreeIn5Years = loanOpt ? loanOpt.boostedMonths <= 60 : data.loans.length === 0;
+  const peerSpendHigherThan = Math.max(0, Math.min(100, 100 - breakdown.percentileVsPeers));
 
   const toneRing: Record<typeof tone, string> = {
     emerald: "from-emerald-500/30 to-emerald-500/0 text-emerald-300",
@@ -337,6 +372,40 @@ export function AIInsights({ fallback }: Props) {
 
       <TopAlerts data={data} breakdown={breakdown} recos={recos} />
 
+      <div className="rounded-3xl border border-border/60 bg-card/70 p-5">
+        <div className="flex items-center gap-2">
+          <Lightbulb className="size-4 text-primary" />
+          <p className="text-sm font-semibold">What should I do next?</p>
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">Follow these steps in order.</p>
+        <ol className="mt-4 space-y-2 text-sm">
+          <li className="flex gap-2 rounded-xl border border-border/50 bg-background/35 px-3 py-2">
+            <span className="text-primary">1.</span>
+            <span>
+              {foodSpend > 0
+                ? <>Reduce food spending to about <span className="font-semibold">₹{foodTarget.toLocaleString("en-IN")}/month</span>.</>
+                : "Keep food spending under 20% of income."}
+            </span>
+          </li>
+          <li className="flex gap-2 rounded-xl border border-border/50 bg-background/35 px-3 py-2">
+            <span className="text-primary">2.</span>
+            <span>
+              {topLoan
+                ? <>Pay <span className="font-semibold">{topLoan.name ?? topLoan.type}</span> first ({topLoan.interest}% interest).</>
+                : "Close your highest-interest loan first."}
+            </span>
+          </li>
+          <li className="flex gap-2 rounded-xl border border-border/50 bg-background/35 px-3 py-2">
+            <span className="text-primary">3.</span>
+            <span>
+              {actionSip > 0
+                ? <>Start SIP <span className="font-semibold">₹{actionSip.toLocaleString("en-IN")}</span> every month.</>
+                : "Start with a small auto-save (₹500/month), then convert it to SIP."}
+            </span>
+          </li>
+        </ol>
+      </div>
+
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="rounded-3xl border border-border/60 bg-card/70 p-5">
           <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Your money score</p>
@@ -349,6 +418,9 @@ export function AIInsights({ fallback }: Props) {
               <p className="text-sm font-medium text-foreground">{band}</p>
               <p className="mt-1 text-xs text-muted-foreground">
                 Better than {breakdown.percentileVsPeers} out of 100 people like you
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                You are spending more than {peerSpendHigherThan} out of 100 people in your income range.
               </p>
             </div>
           </div>
@@ -385,6 +457,20 @@ export function AIInsights({ fallback }: Props) {
               <p className="mt-1 text-sm font-semibold text-foreground">₹{monthlySavings.toLocaleString("en-IN")}</p>
             </div>
           </div>
+          <div className="mt-4 rounded-2xl border border-primary/20 bg-primary/5 p-3">
+            <div className="flex items-center gap-2">
+              <Gamepad2 className="size-4 text-primary" />
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">Your level</p>
+            </div>
+            <p className="mt-2 text-sm font-semibold text-foreground">{gameLevel}</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {gameLevel === "Beginner Saver"
+                ? "Hit score 55 to unlock Smart Investor."
+                : gameLevel === "Smart Investor"
+                  ? "Close high-interest debt and cross 80 to become Debt-Free Hero."
+                  : "Amazing! Keep compounding and keep this badge."}
+            </p>
+          </div>
         </div>
 
         <div className="rounded-3xl border border-border/60 bg-card/70 p-5">
@@ -394,6 +480,10 @@ export function AIInsights({ fallback }: Props) {
               (() => {
                 const needed = Math.ceil(topGoal.targetAmount / (topGoal.years * 12));
                 const shortfall = Math.max(0, needed - monthlySavings);
+                const isUnrealistic = data.income > 0 && needed > data.income;
+                const feasibleYears = data.income > 0
+                  ? Math.ceil(topGoal.targetAmount / (Math.max(monthlySavings, data.income * 0.2) * 12))
+                  : null;
                 return (
                   <>
                     <p className="mt-4 text-4xl font-bold text-foreground">{goalProb}%</p>
@@ -403,11 +493,23 @@ export function AIInsights({ fallback }: Props) {
                     <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/5">
                       <div className="h-full rounded-full bg-primary" style={{ width: `${goalProb}%` }} />
                     </div>
-                    <p className="mt-3 text-[11px] text-muted-foreground">
-                      {shortfall > 0
-                        ? `Save ₹${needed.toLocaleString("en-IN")}/mo to hit it (you're short by ₹${shortfall.toLocaleString("en-IN")}/mo today).`
-                        : `You're on track — keep saving ₹${monthlySavings.toLocaleString("en-IN")}/mo.`}
-                    </p>
+                    {isUnrealistic ? (
+                      <div className="mt-3 rounded-xl border border-amber-400/30 bg-amber-500/10 p-3 text-[11px] leading-5 text-amber-100">
+                        <p className="font-semibold">Hard at this timeline.</p>
+                        <p className="mt-1">
+                          You&apos;d need to save ₹{needed.toLocaleString("en-IN")}/mo — more than your whole salary.
+                          {feasibleYears && feasibleYears > topGoal.years
+                            ? ` Try ${feasibleYears} years instead — that's roughly ₹${Math.ceil(topGoal.targetAmount / (feasibleYears * 12)).toLocaleString("en-IN")}/mo.`
+                            : " Consider a smaller target or a longer timeline."}
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="mt-3 text-[11px] text-muted-foreground">
+                        {shortfall > 0
+                          ? `Save ₹${needed.toLocaleString("en-IN")}/mo to hit it (you're short by ₹${shortfall.toLocaleString("en-IN")}/mo today).`
+                          : `You're on track — keep saving ₹${monthlySavings.toLocaleString("en-IN")}/mo.`}
+                      </p>
+                    )}
                   </>
                 );
               })()
@@ -425,6 +527,9 @@ export function AIInsights({ fallback }: Props) {
           <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Pay your loan faster</p>
           {loanOpt && topLoan ? (
             <>
+              <p className="mt-3 inline-flex rounded-full border border-red-400/30 bg-red-500/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-red-200">
+                🔥 Pay this first ({topLoan.interest}% interest)
+              </p>
               <p className="mt-4 text-sm text-foreground">
                 Pay <span className="font-semibold text-primary">₹{loanOpt.boostedEmi.toLocaleString("en-IN")}/mo</span>
                 {" "}instead of ₹{topLoan.emi.toLocaleString("en-IN")}/mo on your {topLoan.name ?? topLoan.type}
@@ -435,6 +540,28 @@ export function AIInsights({ fallback }: Props) {
                   : `Closes a bit faster.`}
                 {" "}Saves about ₹{Math.round(loanOpt.interestSavedApprox).toLocaleString("en-IN")} in interest.
               </p>
+              <div className="mt-3 rounded-xl border border-border/50 bg-background/35 p-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Interest saved view</p>
+                <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10">
+                  <div
+                    className="h-full rounded-full bg-emerald-400"
+                    style={{
+                      width: `${Math.min(
+                        100,
+                        Math.max(6, (loanOpt.interestSavedApprox / Math.max(1, topLoan.balance)) * 100),
+                      )}%`,
+                    }}
+                  />
+                </div>
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  About ₹{Math.round(loanOpt.interestSavedApprox).toLocaleString("en-IN")} saved when you add this extra EMI.
+                </p>
+              </div>
+              <ol className="mt-3 space-y-1.5 text-xs text-muted-foreground">
+                <li>1. Keep all regular EMIs running.</li>
+                <li>2. Add the extra amount only to this highest-interest loan.</li>
+                <li>3. After this closes, move the same extra amount to the next loan.</li>
+              </ol>
               <p className="mt-3 text-[11px] text-muted-foreground">
                 You owe ₹{debt.toLocaleString("en-IN")} · paying ₹{emi.toLocaleString("en-IN")}/mo today
               </p>
@@ -442,6 +569,97 @@ export function AIInsights({ fallback }: Props) {
           ) : (
             <p className="mt-6 text-sm text-muted-foreground">No active loans. Add one in onboarding to see a payoff plan.</p>
           )}
+        </div>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="rounded-3xl border border-border/60 bg-card/70 p-5">
+          <div className="flex items-center gap-2">
+            <BarChart3 className="size-4 text-primary" />
+            <p className="text-sm font-semibold">Savings creation strategy</p>
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">Before vs after plan</p>
+          <div className="mt-4 space-y-2 text-sm">
+            <div className="flex items-center justify-between rounded-xl border border-border/50 bg-background/35 px-3 py-2">
+              <span>Food</span>
+              <span className="font-medium">
+                ₹{foodSpend.toLocaleString("en-IN")} → ₹{foodTarget.toLocaleString("en-IN")}
+              </span>
+            </div>
+            <div className="flex items-center justify-between rounded-xl border border-border/50 bg-background/35 px-3 py-2">
+              <span>Subscriptions</span>
+              <span className="font-medium">
+                ₹{subscriptionSpend.toLocaleString("en-IN")} → ₹{subscriptionTarget.toLocaleString("en-IN")}
+              </span>
+            </div>
+            <div className="rounded-xl border border-emerald-400/30 bg-emerald-500/10 px-3 py-2 text-emerald-100">
+              Total savings created: <span className="font-semibold">₹{totalSavingsCreated.toLocaleString("en-IN")}/month</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-border/60 bg-card/70 p-5">
+          <div className="flex items-center gap-2">
+            <ShieldAlert className="size-4 text-primary" />
+            <p className="text-sm font-semibold">Emergency risk simulation</p>
+          </div>
+          <div className="mt-4 grid gap-2 sm:grid-cols-2">
+            <div className="rounded-xl border border-border/50 bg-background/35 p-3">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Can you survive 3 months?</p>
+              <p className="mt-1 text-sm font-semibold text-foreground">{emergencyCurrent >= emergencyRequired ? "Yes" : "Not yet"}</p>
+              <p className="mt-1 text-xs text-muted-foreground">Need ₹{emergencyRequired.toLocaleString("en-IN")} for 3 months.</p>
+            </div>
+            <div className="rounded-xl border border-border/50 bg-background/35 p-3">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Emergency fund</p>
+              <p className="mt-1 text-sm font-semibold text-foreground">
+                Required ₹{emergencyRequired.toLocaleString("en-IN")} · Current ₹{emergencyCurrent.toLocaleString("en-IN")}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {emergencyBuildMonths ? `At your current savings pace, you can build this in about ${emergencyBuildMonths} months.` : "Start by auto-saving every month to build this fund."}
+              </p>
+            </div>
+          </div>
+          <div className="mt-3 rounded-xl border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-100">
+            Smart alert: {breakdown.metrics.debtServiceRatio > 0.4 ? "Your EMI ratio is risky." : "EMI ratio is under control."}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="rounded-3xl border border-border/60 bg-card/70 p-5">
+          <div className="flex items-center gap-2">
+            <LineChart className="size-4 text-primary" />
+            <p className="text-sm font-semibold">Financial roadmap</p>
+          </div>
+          <div className="mt-4 grid gap-2 text-sm sm:grid-cols-3">
+            <div className="rounded-xl border border-border/50 bg-background/35 p-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">Year 1-2</p>
+              <p className="mt-1 text-xs text-muted-foreground">Cut overspending, build emergency fund, and attack high-interest debt.</p>
+            </div>
+            <div className="rounded-xl border border-border/50 bg-background/35 p-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">Year 3-5</p>
+              <p className="mt-1 text-xs text-muted-foreground">Increase SIPs, reduce remaining debt, and push goal funding faster.</p>
+            </div>
+            <div className="rounded-xl border border-border/50 bg-background/35 p-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">Year 5-10</p>
+              <p className="mt-1 text-xs text-muted-foreground">Stay debt-light, grow investments, and complete long-term goals.</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-primary/30 bg-gradient-to-br from-primary/10 via-card/80 to-card/60 p-5">
+          <div className="flex items-center gap-2">
+            <Sparkles className="size-4 text-primary" />
+            <p className="text-sm font-semibold">AI financial story (5 years)</p>
+          </div>
+          <p className="mt-3 text-sm text-foreground">
+            If you follow this plan, in 5 years you can save about <span className="font-semibold">₹{fiveYearSavings.toLocaleString("en-IN")}</span>,{" "}
+            {canBeDebtFreeIn5Years ? "be debt-free" : "cut most of your high-interest debt"}, and move closer to{" "}
+            <span className="font-semibold">{topGoal?.name ?? topGoal?.type ?? "your top goal"}</span>.
+          </p>
+          <p className="mt-2 text-xs text-muted-foreground">
+            This is based on your current income and the action plan above — no impossible monthly target.
+          </p>
         </div>
       </div>
 
@@ -483,15 +701,15 @@ export function AIInsights({ fallback }: Props) {
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <LineChart className="size-4 text-primary" />
-            <p className="text-sm font-semibold">Where you&apos;ll be in 1 year</p>
+            <p className="text-sm font-semibold">Comparison mode · current vs optimized</p>
           </div>
           <span className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-            if your habits stay the same
+            12-month projection
           </span>
         </div>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <div className="rounded-2xl border border-border/50 bg-background/40 p-4">
-            <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">If you keep going as-is</p>
+            <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Current plan</p>
             <p className="mt-2 text-2xl font-bold text-foreground">
               ₹{forecast.baseline.total.toLocaleString("en-IN")}
             </p>
@@ -500,7 +718,7 @@ export function AIInsights({ fallback }: Props) {
             </p>
           </div>
           <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/5 p-4">
-            <p className="text-[11px] uppercase tracking-[0.18em] text-emerald-300">If you take action</p>
+            <p className="text-[11px] uppercase tracking-[0.18em] text-emerald-300">Optimized plan</p>
             <p className="mt-2 text-2xl font-bold text-foreground">
               ₹{forecast.improved.total.toLocaleString("en-IN")}
             </p>
@@ -526,22 +744,31 @@ export function AIInsights({ fallback }: Props) {
           <BarChart3 className="size-4 text-primary" />
           <p className="text-sm font-semibold">Where your money goes</p>
         </div>
-        {(() => {
-          const chartData = Object.entries(data.expenses)
-            .map(([k, v]) => ({ name: k.replace(/_/g, " "), value: v }))
-            .filter((e) => e.value > 0)
-            .sort((a, b) => b.value - a.value);
-          if (chartData.length === 0) {
-            return (
-              <p className="mt-4 text-sm text-muted-foreground">
-                No expenses captured. Edit your onboarding to add category spend.
+        {expenseChartData.length === 0 ? (
+          <p className="mt-4 text-sm text-muted-foreground">
+            No expenses captured. Edit your onboarding to add category spend.
+          </p>
+        ) : (
+          <>
+            <div className="mt-3 rounded-xl border border-border/50 bg-background/35 p-3">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Auto-categorized expenses</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                We grouped your spend into {expenseChartData.length} categories automatically.
               </p>
-            );
-          }
-          return (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {expenseChartData.slice(0, 5).map((c) => (
+                  <span
+                    key={c.name}
+                    className="rounded-full border border-border/50 bg-card/60 px-2 py-0.5 text-[10px] uppercase tracking-[0.16em] text-muted-foreground"
+                  >
+                    {c.name}: ₹{c.value.toLocaleString("en-IN")}
+                  </span>
+                ))}
+              </div>
+            </div>
             <div className="mt-4 h-[260px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} layout="vertical" margin={{ top: 4, right: 24, left: 16, bottom: 4 }}>
+                <BarChart data={expenseChartData} layout="vertical" margin={{ top: 4, right: 24, left: 16, bottom: 4 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
                   <XAxis type="number" tick={{ fill: "rgba(255,255,255,0.55)", fontSize: 11 }} tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} />
                   <YAxis type="category" dataKey="name" width={100} tick={{ fill: "rgba(255,255,255,0.75)", fontSize: 12 }} />
@@ -554,8 +781,8 @@ export function AIInsights({ fallback }: Props) {
                 </BarChart>
               </ResponsiveContainer>
             </div>
-          );
-        })()}
+          </>
+        )}
       </div>
 
       <div className="rounded-3xl border border-border/60 bg-card/70 p-5">
@@ -621,39 +848,61 @@ export function AIInsights({ fallback }: Props) {
         )}
       </div>
 
-      <div className="rounded-3xl border border-border/60 bg-card/70 p-5">
+      <div id="action-list" className="rounded-3xl border border-border/60 bg-card/70 p-5">
         <div className="flex items-center gap-2">
           <Lightbulb className="size-4 text-primary" />
-          <p className="text-sm font-semibold">Your action list</p>
+          <p className="text-sm font-semibold">What you should do — step by step</p>
         </div>
-        <ul className="mt-4 space-y-2">
+        <p className="mt-1 text-xs text-muted-foreground">
+          Each card tells you what's wrong, and exactly how to fix it. Pick one and start with step 1.
+        </p>
+        <ol className="mt-4 space-y-3">
           {recos.map((r, i) => {
             const Icon = AGENT_ICON[r.agent];
             const SevIcon = r.severity === "risk" ? AlertTriangle : r.severity === "warn" ? ShieldAlert : Info;
             return (
-              <li key={i} className={`flex items-start gap-3 rounded-2xl border px-4 py-3 text-sm ${AGENT_TONE[r.severity]}`}>
-                <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-black/20">
-                  <Icon className="size-4" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-medium text-foreground">{r.title}</p>
-                    <span className="rounded-full border border-white/15 px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] opacity-80">
-                      {r.agent}
-                    </span>
-                    {r.impactMonthly > 0 && (
-                      <span className="rounded-full border border-emerald-400/40 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-300">
-                        saves ₹{r.impactMonthly.toLocaleString("en-IN")}/mo
-                      </span>
+              <li key={i} className={`rounded-2xl border px-4 py-4 text-sm ${AGENT_TONE[r.severity]}`}>
+                <div className="flex items-start gap-3">
+                  <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-black/20">
+                    <span className="text-xs font-bold text-foreground">#{i + 1}</span>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-medium text-foreground">{r.title}</p>
+                      {r.impactMonthly > 0 && (
+                        <span className="rounded-full border border-emerald-400/40 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-300">
+                          saves ₹{r.impactMonthly.toLocaleString("en-IN")}/mo
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-1 text-xs leading-5 opacity-90">{r.detail}</p>
+                    {r.howTo && r.howTo.length > 0 && (
+                      <div className="mt-3 rounded-xl border border-white/10 bg-black/20 p-3">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-foreground/80">
+                          How to do it
+                        </p>
+                        <ol className="mt-2 space-y-1.5 text-xs leading-5 text-foreground/90">
+                          {r.howTo.map((step, idx) => (
+                            <li key={idx} className="flex gap-2">
+                              <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-foreground/15 text-[10px] font-semibold">
+                                {idx + 1}
+                              </span>
+                              <span>{step}</span>
+                            </li>
+                          ))}
+                        </ol>
+                      </div>
                     )}
                   </div>
-                  <p className="mt-1 text-xs leading-5 opacity-90">{r.detail}</p>
+                  <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-black/15">
+                    <SevIcon className="size-4 opacity-70" />
+                  </div>
+                  <Icon className="hidden" />
                 </div>
-                <SevIcon className="size-4 shrink-0 opacity-70" />
               </li>
             );
           })}
-        </ul>
+        </ol>
       </div>
     </section>
   );
