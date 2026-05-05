@@ -210,13 +210,9 @@ function TopBar() {
           </div>
 
           <div className="ml-auto flex items-center gap-2">
-            <Link
-              href="/chat"
-              className="hidden items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary transition hover:bg-primary/20 sm:inline-flex"
-            >
-              <Bot className="size-3.5" />
-              Ask Zova
-            </Link>
+            <div className="hidden sm:block">
+              <SupportWidget variant="navbar" />
+            </div>
             <div className="hidden lg:block">
               <LogoutButton compact />
             </div>
@@ -252,7 +248,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       >
         {children}
       </main>
-      <SupportWidget />
     </div>
   );
 }

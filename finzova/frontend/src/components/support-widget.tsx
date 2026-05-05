@@ -44,7 +44,11 @@ const QUICK_CHAT_PROMPTS = [
   "What should I do first this month?",
 ];
 
-export function SupportWidget() {
+type SupportWidgetProps = {
+  variant?: "navbar" | "floating";
+};
+
+export function SupportWidget({ variant = "navbar" }: SupportWidgetProps) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -54,23 +58,35 @@ export function SupportWidget() {
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? "Close Ask Zova" : "Open Ask Zova"}
         className={cn(
-          "group fixed bottom-5 right-5 z-[90] flex items-center gap-2.5 rounded-full border border-primary/40 px-2 py-2 shadow-[0_18px_45px_-12px_rgba(0,0,0,0.75)] backdrop-blur-md transition hover:scale-[1.03]",
+          "group inline-flex items-center gap-2 rounded-full border transition",
+          variant === "floating"
+            ? "fixed bottom-5 right-5 z-[90] gap-2.5 border-primary/40 px-2 py-2 shadow-[0_18px_45px_-12px_rgba(0,0,0,0.75)] backdrop-blur-md hover:scale-[1.03]"
+            : "border-primary/35 px-2 py-1 hover:border-primary/55",
           open
             ? "bg-background/95 text-foreground"
-            : "bg-gradient-to-br from-emerald-500/95 via-primary/90 to-emerald-600/90 text-primary-foreground",
+            : variant === "floating"
+              ? "bg-gradient-to-br from-emerald-500/95 via-primary/90 to-emerald-600/90 text-primary-foreground"
+              : "bg-gradient-to-br from-primary/20 via-primary/10 to-transparent text-foreground",
         )}
       >
         {open ? (
           <>
-            <span className="flex size-9 items-center justify-center rounded-full bg-foreground/10">
-              <X className="size-4" />
+            <span className={cn("flex items-center justify-center rounded-full bg-foreground/10", variant === "floating" ? "size-9" : "size-7")}>
+              <X className={variant === "floating" ? "size-4" : "size-3.5"} />
             </span>
-            <span className="pr-3 text-sm font-semibold">Close</span>
+            <span className={cn("font-semibold", variant === "floating" ? "pr-3 text-sm" : "pr-2 text-xs")}>Close</span>
           </>
         ) : (
           <>
-            <ZovaAvatar size={36} mood="happy" glow={false} />
-            <span className="pr-3 text-sm font-semibold tracking-wide text-white drop-shadow-[0_1px_0_rgba(0,0,0,0.25)]">
+            <ZovaAvatar size={variant === "floating" ? 36 : 26} mood="happy" glow={false} />
+            <span
+              className={cn(
+                "font-semibold tracking-wide",
+                variant === "floating"
+                  ? "pr-3 text-sm text-white drop-shadow-[0_1px_0_rgba(0,0,0,0.25)]"
+                  : "pr-2 text-xs text-foreground",
+              )}
+            >
               Ask Zova
             </span>
           </>
@@ -78,7 +94,12 @@ export function SupportWidget() {
       </button>
 
       {open && (
-        <div className="fixed bottom-[5.5rem] right-5 z-[90] w-[min(380px,calc(100vw-2.5rem))] overflow-hidden rounded-3xl border border-border/70 bg-card/95 shadow-[0_28px_60px_-20px_rgba(0,0,0,0.8)] backdrop-blur-xl">
+        <div
+          className={cn(
+            "z-[90] w-[min(380px,calc(100vw-2.5rem))] overflow-hidden rounded-3xl border border-border/70 bg-card/95 shadow-[0_28px_60px_-20px_rgba(0,0,0,0.8)] backdrop-blur-xl",
+            variant === "floating" ? "fixed bottom-[5.5rem] right-5" : "fixed right-4 top-[5.5rem] sm:right-6 lg:right-8",
+          )}
+        >
           <div className="border-b border-border/60 bg-gradient-to-br from-primary/20 via-primary/10 to-transparent px-5 py-4">
             <div className="flex items-center gap-2 text-primary">
               <Bot className="size-4" />
