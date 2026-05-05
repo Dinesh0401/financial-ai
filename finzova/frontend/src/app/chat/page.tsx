@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { ArrowUp, Loader2, Sparkles, User2 } from "lucide-react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
@@ -33,7 +33,6 @@ const STARTER_PROMPTS = [
 
 export default function ChatPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
@@ -170,17 +169,19 @@ export default function ChatPage() {
 
   useEffect(() => {
     if (autoPromptHandledRef.current) return;
-    const q = (searchParams.get("q") ?? "").trim();
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const q = (params.get("q") ?? "").trim();
     if (!q) return;
     if (messages.length > 0 || streaming) return;
-    const autoSend = searchParams.get("send") === "1";
+    const autoSend = params.get("send") === "1";
     autoPromptHandledRef.current = true;
     if (autoSend) {
       void submitPrompt(q);
       return;
     }
     setInput(q);
-  }, [messages.length, searchParams, streaming, submitPrompt]);
+  }, [messages.length, streaming, submitPrompt]);
 
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === "Enter" && !e.shiftKey) {
