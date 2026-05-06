@@ -37,6 +37,29 @@ export type DashboardAlert = {
   message?: string;
 };
 
+export type DashboardAiAgent = {
+  agent_name: string;
+  status: string;
+  confidence?: number | null;
+  execution_time_ms?: number | null;
+};
+
+export type DashboardAiRecommendation = {
+  title: string;
+  description?: string | null;
+  agent?: string | null;
+  priority?: string | number | null;
+  potential_saving?: number | null;
+  action_items?: string[];
+};
+
+export type DashboardAiAnalysis = {
+  summary: string;
+  agents: DashboardAiAgent[];
+  recommendations: DashboardAiRecommendation[];
+  last_run_at?: string | null;
+};
+
 export type DashboardData = {
   health_score: {
     score: number;
@@ -52,6 +75,7 @@ export type DashboardData = {
   active_goals: DashboardGoal[];
   recent_alerts: DashboardAlert[];
   quick_insights: string[];
+  ai_analysis?: DashboardAiAnalysis | null;
 };
 
 export type GoalRecord = {

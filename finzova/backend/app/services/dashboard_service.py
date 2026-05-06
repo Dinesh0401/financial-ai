@@ -88,6 +88,61 @@ class DashboardService:
                 "Upload a bank or UPI statement to unlock automatic spending insights.",
             ]
 
+        traces = analysis.agent_traces if isinstance(analysis.agent_traces, dict) else {}
+        trace_agents = traces.get("agents")
+        ai_agents: list[dict] = []
+        if isinstance(trace_agents, list):
+            for item in trace_agents:
+                if not isinstance(item, dict):
+                    continue
+                confidence = item.get("confidence")
+                execution_time_ms = item.get("execution_time_ms")
+                ai_agents.append(
+                    {
+                        "agent_name": str(item.get("agent_name") or "unknown_agent"),
+                        "status": str(item.get("status") or "unknown"),
+                        "confidence": float(confidence) if isinstance(confidence, (int, float)) else None,
+                        "execution_time_ms": int(execution_time_ms) if isinstance(execution_time_ms, (int, float)) else None,
+                    }
+                )
+
+        ai_recommendations: list[dict] = []
+        if isinstance(analysis.recommendations, list):
+            for recommendation in analysis.recommendations:
+                if not isinstance(recommendation, dict):
+                    continue
+                action_items = recommendation.get("action_items")
+                potential_saving = recommendation.get("potential_saving")
+                ai_recommendations.append(
+                    {
+                        "title": str(recommendation.get("title") or recommendation.get("id") or "Recommendation"),
+                        "description": (
+                            str(
+                                recommendation.get("description")
+                                or recommendation.get("detail")
+                                or recommendation.get("message")
+                            )
+                            if (
+                                recommendation.get("description")
+                                or recommendation.get("detail")
+                                or recommendation.get("message")
+                            )
+                            else None
+                        ),
+                        "agent": str(recommendation.get("agent")) if recommendation.get("agent") else None,
+                        "priority": recommendation.get("priority"),
+                        "potential_saving": float(potential_saving) if isinstance(potential_saving, (int, float)) else None,
+                        "action_items": [str(item) for item in action_items] if isinstance(action_items, list) else [],
+                    }
+                )
+
+        summary = traces.get("summary")
+        ai_summary = (
+            summary
+            if isinstance(summary, str) and summary.strip()
+            else "Not enough financial history is available yet to produce a strong multi-agent summary."
+        )
+
         return {
             "health_score": {
                 "score": analysis.financial_score,
@@ -118,4 +173,10 @@ class DashboardService:
                 for alert in alerts
             ],
             "quick_insights": quick_insights,
+            "ai_analysis": {
+                "summary": ai_summary,
+                "agents": ai_agents,
+                "recommendations": ai_recommendations[:6],
+                "last_run_at": analysis.created_at.isoformat() if analysis.created_at else None,
+            },
         }

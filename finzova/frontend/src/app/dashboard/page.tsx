@@ -3,11 +3,27 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { AlertTriangle, ArrowDownRight, ArrowUpRight, Loader2, PencilLine, PiggyBank, Sparkles } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowDownRight,
+  ArrowUpRight,
+  Brain,
+  CreditCard,
+  Landmark,
+  Loader2,
+  PencilLine,
+  PiggyBank,
+  ShieldAlert,
+  Sparkles,
+  Target,
+  TrendingUp,
+  Wallet,
+} from "lucide-react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 
 import { AppShell } from "@/components/app-shell";
+import { AgentStatusCard } from "@/components/chat/agent-status-card";
 import { HealthGauge } from "@/components/health-gauge";
 import { SpendingBreakdown } from "@/components/spending-breakdown";
 import { StoryTabs } from "@/components/story/story-tabs";
@@ -52,6 +68,15 @@ const EMPTY_STATE: DashboardState = {
   saveError: null,
   saveSuccess: null,
 };
+
+const AGENT_DESCRIPTORS = [
+  { name: "Expense Agent", icon: Wallet, desc: "Analyzes spend leaks and category pressure." },
+  { name: "Debt Agent", icon: CreditCard, desc: "Tracks debt ratio and EMI stress." },
+  { name: "Goal Agent", icon: Target, desc: "Checks goal progress and success probability." },
+  { name: "Risk Agent", icon: ShieldAlert, desc: "Monitors emergency buffer and risk signals." },
+  { name: "Investment Agent", icon: TrendingUp, desc: "Reviews SIP and long-term allocation." },
+  { name: "Tax Agent", icon: Landmark, desc: "Flags India-specific tax opportunities." },
+] as const;
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -257,6 +282,10 @@ export default function DashboardPage() {
     ? { ...snapshot!.expenses, ...(totalEmi(snapshot!.loans) > 0 ? { emi_loan: totalEmi(snapshot!.loans) } : {}) }
     : dashboard.spending_breakdown;
   const firstName = profile.name?.split(" ")[0] ?? null;
+  const aiAnalysis = dashboard.ai_analysis ?? null;
+  const activeAgentNames = aiAnalysis?.agents
+    .filter((agent) => agent.status.toLowerCase() === "success")
+    .map((agent) => agent.agent_name) ?? [];
 
   return (
     <AppShell>
@@ -438,6 +467,70 @@ export default function DashboardPage() {
             )}
           </CardContent>
         </Card>
+
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
+          <Card className="border-border/60 bg-card/80 backdrop-blur-xl">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <Brain className="size-4 text-primary" />
+                <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-primary">AI analysis</p>
+              </div>
+              <CardTitle className="mt-1 text-lg">Automatic multi-agent review</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm leading-7 text-muted-foreground">
+                {aiAnalysis?.summary ??
+                  "Run more transactions through the app to unlock a full multi-agent summary on this dashboard."}
+              </p>
+
+              {aiAnalysis?.last_run_at ? (
+                <Badge
+                  variant="outline"
+                  className="rounded-full border-primary/30 bg-primary/10 px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-primary"
+                >
+                  Last run · {new Date(aiAnalysis.last_run_at).toLocaleString("en-IN")}
+                </Badge>
+              ) : null}
+
+              {aiAnalysis?.recommendations?.length ? (
+                <div className="space-y-2">
+                  {aiAnalysis.recommendations.slice(0, 4).map((recommendation, index) => (
+                    <div
+                      key={`${recommendation.title}-${index}`}
+                      className="rounded-2xl border border-border/60 bg-background/30 px-3 py-3"
+                    >
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium text-foreground">{recommendation.title}</p>
+                        {recommendation.potential_saving && recommendation.potential_saving > 0 ? (
+                          <Badge className="rounded-full bg-emerald-500/15 text-[10px] uppercase tracking-[0.2em] text-emerald-300">
+                            Save ₹{Math.round(recommendation.potential_saving).toLocaleString("en-IN")}/mo
+                          </Badge>
+                        ) : null}
+                      </div>
+                      {recommendation.description ? (
+                        <p className="mt-1 text-xs leading-6 text-muted-foreground">{recommendation.description}</p>
+                      ) : null}
+                      {recommendation.action_items && recommendation.action_items.length > 0 ? (
+                        <p className="mt-1 text-xs leading-6 text-primary">
+                          Next: {recommendation.action_items[0]}
+                        </p>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-3xl border border-dashed border-border/60 bg-background/25 p-4 text-sm text-muted-foreground">
+                  Recommendations will appear after enough financial data is analyzed.
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <AgentStatusCard
+            agents={AGENT_DESCRIPTORS.map((agent) => ({ ...agent }))}
+            activeAgents={activeAgentNames}
+          />
+        </div>
 
       </div>
     </AppShell>
