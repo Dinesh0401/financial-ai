@@ -65,8 +65,8 @@ function NavLinks({
             onClick={onNavigate}
             data-animate="nav-link"
             className={cn(
-              "group relative flex items-center gap-2 rounded-2xl border px-3 py-2 text-sm transition-all",
-              layout === "stack" && "px-3.5 py-2.5",
+              "group relative flex items-center gap-1.5 rounded-2xl border text-sm transition-all",
+              layout === "horizontal" ? "px-2.5 py-1.5 text-xs lg:gap-2 lg:px-3 lg:py-2 lg:text-sm" : "px-3.5 py-2.5",
               active
                 ? "border-primary/40 bg-primary/15 text-foreground shadow-[inset_0_0_0_1px_rgba(16,185,129,0.08)]"
                 : "border-transparent bg-background/0 text-muted-foreground hover:border-border hover:bg-background/60 hover:text-foreground",
@@ -74,7 +74,7 @@ function NavLinks({
           >
             <Icon
               className={cn(
-                "size-4 shrink-0",
+                "size-3.5 shrink-0 lg:size-4",
                 active ? "text-primary" : "text-muted-foreground group-hover:text-foreground",
               )}
             />
@@ -127,7 +127,7 @@ function MobileMenu({ pathname }: { pathname: string }) {
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="outline" size="icon" className="lg:hidden">
+        <Button variant="outline" size="icon" className="md:hidden">
           <Menu className="size-4" />
         </Button>
       </SheetTrigger>
@@ -228,11 +228,11 @@ function TopBar() {
             </div>
           </Link>
 
-          <div className="ml-2 hidden flex-1 lg:flex">
+          <div className="ml-2 hidden min-w-0 flex-1 md:flex md:overflow-x-auto">
             <NavLinks pathname={pathname} layout="horizontal" />
           </div>
 
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex shrink-0 items-center gap-2">
             <Link
               href="/chat"
               data-animate="nav-link"
@@ -244,7 +244,7 @@ function TopBar() {
                 Ask Zova
               </span>
             </Link>
-            <div className="hidden lg:block">
+            <div className="hidden md:block">
               <LogoutButton compact />
             </div>
             <MobileMenu pathname={pathname} />
