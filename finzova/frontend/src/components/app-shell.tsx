@@ -11,7 +11,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
-  ReceiptText,
+  Upload,
 } from "lucide-react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
@@ -27,7 +27,7 @@ gsap.registerPlugin(useGSAP);
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/analysis", label: "My Money Story", icon: BarChart3 },
-  { href: "/transactions", label: "Transactions", icon: ReceiptText },
+  { href: "/transactions", label: "Upload statement", icon: Upload },
   { href: "/goals", label: "Goals", icon: Goal },
   { href: "/guide", label: "How to Use", icon: BookOpen },
 ];

@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FileUp, Loader2, Upload } from "lucide-react";
+import { ArrowLeft, FileUp, Loader2, Upload } from "lucide-react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 
@@ -129,6 +130,15 @@ export default function TransactionsPage() {
   return (
     <AppShell>
       <div ref={pageRef} className="space-y-6">
+        <div className="flex items-center justify-between gap-2">
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background/40 px-3 py-1.5 text-xs font-medium text-muted-foreground transition hover:border-primary/40 hover:bg-primary/5 hover:text-foreground"
+          >
+            <ArrowLeft className="size-3.5" />
+            Back to dashboard
+          </Link>
+        </div>
         <Card data-animate="card" className="border-border/60 bg-card/80 backdrop-blur-xl">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-xl">
