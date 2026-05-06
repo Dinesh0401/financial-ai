@@ -18,6 +18,59 @@ function isHomeGoal(goal: OnboardingGoal): boolean {
   return /home|house|flat|apartment/.test(text);
 }
 
+function isWeddingGoal(goal: OnboardingGoal): boolean {
+  const text = `${goal.name ?? ""} ${goal.type ?? ""}`.toLowerCase();
+  return /wedding|marriage|engage/.test(text);
+}
+
+const EXPENSE_TRIM_SHARES: Record<string, number> = {
+  food_dining: 0.4,
+  food: 0.4,
+  shopping: 0.5,
+  entertainment: 0.5,
+  rent_housing: 0.15,
+  rent: 0.15,
+  transport: 0.25,
+  emi_loan: 0,
+  healthcare: 0,
+  education: 0,
+};
+
+function buildGapClosePlan(
+  expenses: Record<string, number>,
+  needed: number,
+  currentSavings: number,
+): Array<{ key: string; label: string; current: number; after: number; saved: number }> {
+  const gap = Math.max(0, needed - currentSavings);
+  if (gap <= 0) return [];
+
+  const candidates = Object.entries(expenses)
+    .filter(([key, amt]) => amt > 0 && (EXPENSE_TRIM_SHARES[key] ?? 0.2) > 0)
+    .map(([key, amt]) => {
+      const share = EXPENSE_TRIM_SHARES[key] ?? 0.2;
+      const maxCut = Math.round(amt * share);
+      return { key, current: amt, maxCut };
+    })
+    .sort((a, b) => b.maxCut - a.maxCut);
+
+  const plan: Array<{ key: string; label: string; current: number; after: number; saved: number }> = [];
+  let remaining = gap;
+  for (const c of candidates) {
+    if (remaining <= 0) break;
+    const cut = Math.min(c.maxCut, remaining);
+    if (cut < 200) continue;
+    plan.push({
+      key: c.key,
+      label: c.key.replace(/_/g, " "),
+      current: c.current,
+      after: c.current - cut,
+      saved: cut,
+    });
+    remaining -= cut;
+  }
+  return plan;
+}
+
 export function GoalsStep({ snapshot }: { snapshot: OnboardingSnapshot }) {
   const expenses = totalExpenses(snapshot.expenses);
   const emi = totalEmi(snapshot.loans);
@@ -193,6 +246,41 @@ export function GoalsStep({ snapshot }: { snapshot: OnboardingSnapshot }) {
                             </span>
                           </li>
                         </ol>
+                      ) : isWeddingGoal(goal) ? (
+                        (() => {
+                          const realistic = realisticYears ?? Math.max(3, goal.years + 2);
+                          const realisticMonthly = Math.ceil(goal.targetAmount / (realistic * 12));
+                          const halfTarget = Math.round(goal.targetAmount * 0.5);
+                          const halfMonthly = Math.ceil(halfTarget / (realistic * 12));
+                          return (
+                            <ol className="mt-3 space-y-2 text-xs leading-5 text-amber-50/95">
+                              <li className="flex gap-2">
+                                <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-amber-500/40 text-[10px] font-semibold">1</span>
+                                <span>
+                                  <span className="font-semibold">When are you actually getting married?</span> Most weddings are planned 2-4 years ahead. Update the timeline to match real life.
+                                </span>
+                              </li>
+                              <li className="flex gap-2">
+                                <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-amber-500/40 text-[10px] font-semibold">2</span>
+                                <span>
+                                  Stretch to <span className="font-semibold">{realistic} years</span> and your monthly target drops to ₹{realisticMonthly.toLocaleString("en-IN")}/mo — much closer to what you save today.
+                                </span>
+                              </li>
+                              <li className="flex gap-2">
+                                <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-amber-500/40 text-[10px] font-semibold">3</span>
+                                <span>
+                                  Or trim the target. A ₹{halfTarget.toLocaleString("en-IN")} wedding (still a generous Indian wedding) needs only ₹{halfMonthly.toLocaleString("en-IN")}/mo for {realistic} years.
+                                </span>
+                              </li>
+                              <li className="flex gap-2">
+                                <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-amber-500/40 text-[10px] font-semibold">4</span>
+                                <span>
+                                  Park monthly contributions in a debt mutual fund or RD — equity is too volatile for a fixed-date goal under 3 years.
+                                </span>
+                              </li>
+                            </ol>
+                          );
+                        })()
                       ) : (
                         <p className="mt-2 text-xs leading-5 text-amber-100/90">
                           {realisticYears
@@ -206,11 +294,53 @@ export function GoalsStep({ snapshot }: { snapshot: OnboardingSnapshot }) {
                       <p className="text-sm font-medium text-foreground">
                         Save ₹{monthlyNeeded.toLocaleString("en-IN")}/month to hit it on time
                       </p>
-                      <p className="mt-1 text-xs leading-6 text-emerald-200/85">
-                        {monthlyNeeded <= monthlySavings
-                          ? `You're already saving ₹${monthlySavings.toLocaleString("en-IN")}/month — keep it up and you'll get there.`
-                          : `You currently save ₹${monthlySavings.toLocaleString("en-IN")}/month — short by ₹${(monthlyNeeded - monthlySavings).toLocaleString("en-IN")}/month. The expense fixes from page 2 close most of this gap.`}
-                      </p>
+                      {monthlyNeeded <= monthlySavings ? (
+                        <p className="mt-1 text-xs leading-6 text-emerald-200/85">
+                          You&apos;re already saving ₹{monthlySavings.toLocaleString("en-IN")}/month — keep it up and you&apos;ll get there.
+                        </p>
+                      ) : (
+                        (() => {
+                          const plan = buildGapClosePlan(snapshot.expenses, monthlyNeeded, monthlySavings);
+                          const totalSaved = plan.reduce((s, p) => s + p.saved, 0);
+                          const stillShort = Math.max(0, monthlyNeeded - monthlySavings - totalSaved);
+                          if (plan.length === 0) {
+                            return (
+                              <p className="mt-1 text-xs leading-6 text-emerald-200/85">
+                                You currently save ₹{monthlySavings.toLocaleString("en-IN")}/mo — short by ₹{(monthlyNeeded - monthlySavings).toLocaleString("en-IN")}/mo. Trim expenses on page 2 to close the gap.
+                              </p>
+                            );
+                          }
+                          return (
+                            <>
+                              <p className="mt-1 text-xs leading-6 text-emerald-200/85">
+                                You save ₹{monthlySavings.toLocaleString("en-IN")}/mo — short by ₹{(monthlyNeeded - monthlySavings).toLocaleString("en-IN")}/mo. Here&apos;s how to close it:
+                              </p>
+                              <ul className="mt-3 space-y-1.5 text-xs">
+                                {plan.map((p) => (
+                                  <li
+                                    key={p.key}
+                                    className="flex items-center justify-between rounded-xl border border-emerald-400/20 bg-background/30 px-3 py-2"
+                                  >
+                                    <span className="capitalize text-foreground">{p.label}</span>
+                                    <span className="text-emerald-100/95">
+                                      ₹{p.current.toLocaleString("en-IN")} → ₹{p.after.toLocaleString("en-IN")}
+                                      <span className="ml-2 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-200">
+                                        +₹{p.saved.toLocaleString("en-IN")}/mo
+                                      </span>
+                                    </span>
+                                  </li>
+                                ))}
+                              </ul>
+                              <p className="mt-3 text-xs leading-6 text-emerald-100/90">
+                                <span className="font-semibold">Total freed: ₹{totalSaved.toLocaleString("en-IN")}/mo.</span>{" "}
+                                {stillShort > 0
+                                  ? `That's most of the gap; the last ₹${stillShort.toLocaleString("en-IN")}/mo can come from a small income side hustle or stretching the timeline by a year.`
+                                  : "That fully closes the gap — you'll hit your goal on time."}
+                              </p>
+                            </>
+                          );
+                        })()
+                      )}
                     </div>
                   )}
                 </div>

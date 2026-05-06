@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowUp, Loader2, Sparkles, User2 } from "lucide-react";
+import { ArrowLeft, ArrowUp, Loader2, Sparkles, User2 } from "lucide-react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 
@@ -195,6 +196,27 @@ export default function ChatPage() {
   return (
     <AppShell>
       <div ref={chatPageRef} className="mx-auto flex h-[calc(100vh-6rem)] w-full max-w-3xl flex-col">
+        <div className="flex items-center justify-between gap-2 px-2 pb-2 pt-1">
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background/40 px-3 py-1.5 text-xs font-medium text-muted-foreground transition hover:border-primary/40 hover:bg-primary/5 hover:text-foreground"
+          >
+            <ArrowLeft className="size-3.5" />
+            Back to dashboard
+          </Link>
+          {messages.length > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                setMessages([]);
+                setInput("");
+              }}
+              className="text-xs text-muted-foreground hover:text-foreground"
+            >
+              Clear chat
+            </button>
+          )}
+        </div>
         {/* Scroll area */}
         <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-4 pt-2">
           {isEmpty ? (

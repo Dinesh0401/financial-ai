@@ -1,14 +1,26 @@
 "use client";
 
-import { CheckCircle2, CircleDot, XCircle } from "lucide-react";
+import { useState } from "react";
+import { Brain, CheckCircle2, CircleDot, CreditCard, ShieldAlert, Target, TrendingUp, Wallet, XCircle } from "lucide-react";
 
 import {
   calculateHealthBreakdown,
+  generateAgentTraces,
   generateAiSummary,
-  totalExpenses,
   totalEmi,
+  totalExpenses,
+  type AgentTrace,
   type OnboardingSnapshot,
 } from "@/lib/ai/engine";
+
+const AGENT_ICON: Record<AgentTrace["agent"], typeof Wallet> = {
+  Expense: Wallet,
+  Debt: CreditCard,
+  Risk: ShieldAlert,
+  Goal: Target,
+  Investment: TrendingUp,
+  Orchestrator: Brain,
+};
 
 const VERDICT_ICON = {
   good: CheckCircle2,
@@ -45,6 +57,8 @@ function subBarColor(score: number): string {
 export function HealthStep({ snapshot }: { snapshot: OnboardingSnapshot }) {
   const breakdown = calculateHealthBreakdown(snapshot);
   const summary = generateAiSummary(snapshot);
+  const traces = generateAgentTraces(snapshot);
+  const [showAgents, setShowAgents] = useState(false);
   const score = breakdown.overall;
   const band = bandLabel(score);
   const expenses = totalExpenses(snapshot.expenses);
@@ -166,6 +180,56 @@ export function HealthStep({ snapshot }: { snapshot: OnboardingSnapshot }) {
             );
           })}
         </ul>
+      </div>
+
+      <div className="rounded-3xl border border-border/60 bg-card/70 p-5 backdrop-blur-xl">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Brain className="size-4 text-primary" />
+            <p className="text-sm font-semibold text-foreground">Agentic AI · how we figured this out</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowAgents((v) => !v)}
+            className="rounded-full border border-border/60 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground transition hover:text-foreground"
+          >
+            {showAgents ? "Hide details" : "Show details"}
+          </button>
+        </div>
+        <p className="mt-2 text-xs text-muted-foreground">
+          Six rule-based AI agents looked at your numbers — Expense, Debt, Risk, Goal, Investment, and an Orchestrator that combines them. No guessing, just math on your data.
+        </p>
+        {showAgents && (
+          <div className="mt-4 grid gap-3 lg:grid-cols-2">
+            {traces.map((t) => {
+              const Icon = AGENT_ICON[t.agent];
+              return (
+                <div key={t.agent} className="rounded-2xl border border-border/50 bg-background/40 p-4">
+                  <div className="flex items-center gap-2">
+                    <div className="flex size-8 items-center justify-center rounded-xl bg-primary/15 text-primary">
+                      <Icon className="size-4" />
+                    </div>
+                    <p className="text-sm font-semibold text-foreground">{t.agent} Agent</p>
+                  </div>
+                  <dl className="mt-3 space-y-1.5 text-xs">
+                    <div>
+                      <dt className="inline font-semibold uppercase tracking-[0.18em] text-muted-foreground">Saw · </dt>
+                      <dd className="inline text-foreground">{t.observation}</dd>
+                    </div>
+                    <div>
+                      <dt className="inline font-semibold uppercase tracking-[0.18em] text-muted-foreground">Thought · </dt>
+                      <dd className="inline text-foreground">{t.analysis}</dd>
+                    </div>
+                    <div>
+                      <dt className="inline font-semibold uppercase tracking-[0.18em] text-primary">Said · </dt>
+                      <dd className="inline text-foreground">{t.output}</dd>
+                    </div>
+                  </dl>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </section>
   );

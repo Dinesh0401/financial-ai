@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { AlertTriangle, ArrowDownRight, ArrowUpRight, Loader2, PencilLine, PiggyBank, Sparkles } from "lucide-react";
+import { AlertTriangle, ArrowDownRight, ArrowUpRight, Brain, Loader2, PencilLine, PiggyBank, Sparkles, Upload } from "lucide-react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 
@@ -280,6 +280,35 @@ export default function DashboardPage() {
               Edit financial data
             </Link>
           </div>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Link
+            href="/transactions"
+            className="group flex items-center gap-3 rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent p-4 transition hover:border-primary/55 hover:from-primary/25"
+          >
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary/20 text-primary ring-1 ring-primary/40">
+              <Upload className="size-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-foreground">Upload bank or UPI statement</p>
+              <p className="text-xs text-muted-foreground">CSV/XLSX/PDF — auto-categorized in seconds</p>
+            </div>
+            <ArrowUpRight className="size-4 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-primary" />
+          </Link>
+          <Link
+            href="/analysis?step=health#agents"
+            className="group flex items-center gap-3 rounded-2xl border border-emerald-400/25 bg-gradient-to-br from-emerald-500/12 via-emerald-500/5 to-transparent p-4 transition hover:border-emerald-400/45 hover:from-emerald-500/20"
+          >
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/20 text-emerald-200 ring-1 ring-emerald-400/40">
+              <Brain className="size-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-foreground">See the 6 AI agents at work</p>
+              <p className="text-xs text-muted-foreground">Expense · Debt · Risk · Goal · Investment · Orchestrator</p>
+            </div>
+            <ArrowUpRight className="size-4 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-emerald-300" />
+          </Link>
         </div>
 
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">

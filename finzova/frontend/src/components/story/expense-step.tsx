@@ -1,7 +1,7 @@
 "use client";
 
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { Sparkles } from "lucide-react";
+import { ArrowDown, Check, Sparkles } from "lucide-react";
 
 import {
   generateRecommendations,
@@ -9,6 +9,116 @@ import {
   totalExpenses,
   type OnboardingSnapshot,
 } from "@/lib/ai/engine";
+
+type CategoryRule = {
+  label: string;
+  pctOfIncome: number;
+  absoluteFloor: number;
+  tip: string;
+};
+
+const CATEGORY_RULES: Record<string, CategoryRule> = {
+  food_dining: {
+    label: "Food",
+    pctOfIncome: 0.15,
+    absoluteFloor: 1500,
+    tip: "Cook 2-3 dinners a week, cap food-app orders at ₹250.",
+  },
+  food: {
+    label: "Food",
+    pctOfIncome: 0.15,
+    absoluteFloor: 1500,
+    tip: "Cook 2-3 dinners a week, cap food-app orders at ₹250.",
+  },
+  rent_housing: {
+    label: "Rent",
+    pctOfIncome: 0.3,
+    absoluteFloor: 6000,
+    tip: "Look 2-3 km away from prime areas or split with a flatmate.",
+  },
+  rent: {
+    label: "Rent",
+    pctOfIncome: 0.3,
+    absoluteFloor: 6000,
+    tip: "Look 2-3 km away from prime areas or split with a flatmate.",
+  },
+  transport: {
+    label: "Transport",
+    pctOfIncome: 0.1,
+    absoluteFloor: 1500,
+    tip: "Swap weekly cabs for metro/bus, work-from-home days save fuel.",
+  },
+  shopping: {
+    label: "Shopping",
+    pctOfIncome: 0.1,
+    absoluteFloor: 1000,
+    tip: "Delete saved cards on Amazon/Flipkart, 72-hr wait on items > ₹2k.",
+  },
+  entertainment: {
+    label: "Entertainment",
+    pctOfIncome: 0.05,
+    absoluteFloor: 500,
+    tip: "Audit OTTs — keep 2 active and rotate, share annual family plans.",
+  },
+  healthcare: {
+    label: "Healthcare",
+    pctOfIncome: 0.05,
+    absoluteFloor: 500,
+    tip: "Use employer cashless if available; keep a top-up policy.",
+  },
+  education: {
+    label: "Education",
+    pctOfIncome: 0.1,
+    absoluteFloor: 1000,
+    tip: "Tuition fees qualify for 80C; claim it on the old regime.",
+  },
+  other: {
+    label: "Other",
+    pctOfIncome: 0.05,
+    absoluteFloor: 500,
+    tip: "Tag these spends for 14 days — 'other' usually hides 2-3 leaks.",
+  },
+};
+
+type TrimRow = {
+  key: string;
+  label: string;
+  current: number;
+  target: number;
+  saved: number;
+  withinTarget: boolean;
+  tip: string;
+};
+
+function buildTrimRows(
+  expenses: Record<string, number>,
+  income: number,
+): TrimRow[] {
+  const rows: TrimRow[] = [];
+  for (const [rawKey, amount] of Object.entries(expenses)) {
+    if (amount <= 0) continue;
+    const rule = CATEGORY_RULES[rawKey] ?? {
+      label: rawKey.replace(/_/g, " "),
+      pctOfIncome: 0.1,
+      absoluteFloor: 500,
+      tip: "Track this for 14 days and set a weekly cap.",
+    };
+    const incomeBased = income > 0 ? Math.round(income * rule.pctOfIncome) : Infinity;
+    const target = Math.max(rule.absoluteFloor, incomeBased);
+    const withinTarget = amount <= target;
+    const saved = withinTarget ? 0 : amount - target;
+    rows.push({
+      key: rawKey,
+      label: rule.label,
+      current: amount,
+      target,
+      saved,
+      withinTarget,
+      tip: rule.tip,
+    });
+  }
+  return rows.sort((a, b) => b.saved - a.saved || b.current - a.current);
+}
 
 export function ExpenseStep({ snapshot }: { snapshot: OnboardingSnapshot }) {
   const expenses = totalExpenses(snapshot.expenses);
@@ -107,16 +217,87 @@ export function ExpenseStep({ snapshot }: { snapshot: OnboardingSnapshot }) {
         </div>
       )}
 
+      {(() => {
+        const trims = buildTrimRows(snapshot.expenses, income);
+        const overspent = trims.filter((t) => !t.withinTarget);
+        const totalCanSave = overspent.reduce((s, t) => s + t.saved, 0);
+
+        if (trims.length === 0) return null;
+
+        return (
+          <div className="rounded-3xl border border-border/60 bg-card/70 p-5 backdrop-blur-xl">
+            <div className="flex items-center gap-2">
+              <ArrowDown className="size-4 text-emerald-300" />
+              <p className="text-sm font-semibold text-foreground">Reduce to → Healthy target</p>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {totalCanSave > 0
+                ? `Trim each category to its healthy line and free up ₹${totalCanSave.toLocaleString("en-IN")}/month.`
+                : "Each line below shows your current spend vs what's typical for your income. You're within range on all of them."}
+            </p>
+            <ul className="mt-4 space-y-2">
+              {trims.map((t) => (
+                <li
+                  key={t.key}
+                  className={`rounded-2xl border px-3 py-3 text-sm ${
+                    t.withinTarget
+                      ? "border-emerald-400/25 bg-emerald-500/5"
+                      : "border-amber-400/35 bg-amber-500/5"
+                  }`}
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="font-semibold capitalize text-foreground">{t.label}</p>
+                    <div className="flex items-center gap-2 text-foreground/90">
+                      <span
+                        className={`tabular-nums ${
+                          t.withinTarget ? "text-emerald-100" : "text-amber-100"
+                        }`}
+                      >
+                        ₹{t.current.toLocaleString("en-IN")}
+                      </span>
+                      <ArrowDown className="size-3.5 -rotate-90 text-muted-foreground" />
+                      <span className="tabular-nums font-semibold text-emerald-200">
+                        ₹{t.target.toLocaleString("en-IN")}
+                      </span>
+                      {t.withinTarget ? (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-200">
+                          <Check className="size-3" /> Within range
+                        </span>
+                      ) : (
+                        <span className="rounded-full border border-emerald-400/40 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-200">
+                          +₹{t.saved.toLocaleString("en-IN")}/mo
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <p className="mt-1.5 text-xs leading-5 text-muted-foreground">{t.tip}</p>
+                </li>
+              ))}
+            </ul>
+            {totalCanSave > 0 && (
+              <div className="mt-4 rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-3 text-sm">
+                <span className="font-semibold text-emerald-100">
+                  Total you can save: ₹{totalCanSave.toLocaleString("en-IN")}/month
+                </span>
+                <span className="ml-1 text-emerald-200/85">
+                  · ₹{(totalCanSave * 12).toLocaleString("en-IN")}/year if you stick with it.
+                </span>
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
       {totalSavePotential > 0 && (
         <div className="rounded-3xl border border-emerald-400/30 bg-emerald-500/10 p-5">
           <div className="flex items-center gap-2">
             <Sparkles className="size-4 text-emerald-300" />
             <p className="text-sm font-semibold text-emerald-100">
-              You can save up to ₹{totalSavePotential.toLocaleString("en-IN")}/month
+              Detailed playbook — save up to ₹{totalSavePotential.toLocaleString("en-IN")}/month
             </p>
           </div>
           <p className="mt-1 text-xs text-emerald-200/90">
-            By acting on the 3 fixes below. Pick the easiest one and start there.
+            Pick the easiest fix below and start there.
           </p>
         </div>
       )}
